@@ -99,7 +99,7 @@ npm run dev                 # http://localhost:5173 (proxies /api to :5000)
 3. From then on, each employee taps their name and enters their **own 4-digit PIN**. Set or change a person's PIN on **Employees → Edit → Kiosk PIN**. New employees get `DEFAULT_KIOSK_PIN` (1234) until HR changes it.
 
 ### Logins
-- **Admin**: the `ADMIN_EMAIL` / `ADMIN_PASSWORD` from `.env` (default `admin@company.com` / `Admin@12345`). **Change this after the first login.**
+- **Admin**: the `ADMIN_EMAIL` / `ADMIN_PASSWORD` from `.env` (`admin@gmail.com` / `admin@0000`). Only this account can sign in; it is re-synced from `.env` on every server start.
 - **Demo employees** (after seeding): `firstname@company.com` / `Employee@123` (for example `priya@company.com`). Kiosk PIN for everyone: `1234`
 
 ## API reference

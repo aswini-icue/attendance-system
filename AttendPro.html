@@ -1,0 +1,2582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%278%27 fill=%27%23e0685d%27/%3E%3Crect x=%277%27 y=%279%27 width=%2718%27 height=%2716%27 rx=%272%27 fill=%27none%27 stroke=%27white%27 stroke-width=%272.2%27/%3E%3Cpath d=%27M7 14h18M12 6v5M20 6v5%27 stroke=%27white%27 stroke-width=%272.2%27/%3E%3C/svg%3E">
+<title>AttendPro – Employee Attendance Management System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+/* ====================== Design tokens ====================== */
+:root {
+  --bg: #f4f6fb;
+  --surface: #ffffff;
+  --border: #e5e9f2;
+  --text: #0f172a;
+  --text-2: #475569;
+  --muted: #64748b;
+  --primary: #2563eb;
+  --primary-600: #1d4ed8;
+  --primary-50: #eff6ff;
+  --sidebar: #0f172a;
+  --sidebar-2: #1e293b;
+  --green: #16a34a;
+  --amber: #d97706;
+  --red: #dc2626;
+  --sky: #0284c7;
+  --indigo: #4f46e5;
+  --violet: #7c3aed;
+  --radius: 12px;
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 16px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 20px 50px rgba(15, 23, 42, 0.2);
+  --sidebar-w: 256px;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 { margin: 0; letter-spacing: -0.01em; }
+a { color: var(--primary); text-decoration: none; }
+button { font-family: inherit; }
+input, select, textarea {
+  font: inherit;
+  color: var(--text);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+input:disabled, select:disabled { background: #f8fafc; color: #94a3b8; cursor: not-allowed; }
+textarea { resize: vertical; width: 100%; }
+
+.muted { color: var(--muted); }
+.small { font-size: 12.5px; }
+.center { text-align: center; }
+.mono { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 13px; }
+.right { text-align: right; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.nowrap { white-space: nowrap; }
+.wrap { max-width: 260px; white-space: normal; }
+.link { display: inline-flex; align-items: center; gap: 4px; font-weight: 500; }
+
+/* ====================== Layout ====================== */
+.app-shell { display: flex; min-height: 100vh; }
+
+.sidebar {
+  width: var(--sidebar-w);
+  background: linear-gradient(180deg, var(--sidebar) 0%, #111c33 100%);
+  color: #cbd5e1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 14px;
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 40;
+  transition: transform 0.25s ease;
+}
+.brand { display: flex; align-items: center; gap: 12px; padding: 4px 8px 22px; }
+.brand-logo {
+  width: 38px; height: 38px; border-radius: 10px;
+  display: grid; place-items: center;
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
+}
+.brand-name { font-weight: 700; font-size: 17px; color: #fff; }
+.brand-sub { font-size: 12px; color: #94a3b8; }
+.nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.nav-section {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: #64748b; padding: 10px 12px 8px;
+}
+.nav-link {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  color: #cbd5e1;
+  font-weight: 500;
+  background: none; border: 0; cursor: pointer; text-align: left; font-size: 14px;
+  transition: background 0.15s, color 0.15s;
+}
+.nav-link:hover { background: rgba(255, 255, 255, 0.06); color: #fff; }
+.nav-link.active { background: var(--primary); color: #fff; box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35); }
+.nav-link.logout { margin-top: 8px; color: #fca5a5; }
+.nav-link.logout:hover { background: rgba(239, 68, 68, 0.12); }
+
+.main { flex: 1; margin-left: var(--sidebar-w); min-width: 0; display: flex; flex-direction: column; }
+.topbar {
+  height: 64px;
+  display: flex; align-items: center; gap: 14px;
+  padding: 0 28px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 20;
+}
+.topbar-title { font-weight: 600; color: var(--text-2); flex: 1; }
+.topbar-user { display: flex; align-items: center; gap: 12px; }
+.topbar-user-text { text-align: right; }
+.topbar-user-name { font-weight: 600; }
+.topbar-user-role { font-size: 12px; color: var(--muted); }
+.content { padding: 28px; max-width: 1440px; width: 100%; }
+.mobile-only { display: none; }
+.sidebar-backdrop { display: none; }
+
+.page-header {
+  display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+.page-header h1 { font-size: 24px; font-weight: 700; }
+.page-header p { margin: 4px 0 0; color: var(--muted); }
+.page-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.section-head { display: flex; justify-content: space-between; align-items: center; margin: 28px 0 14px; }
+.section-head h2 { font-size: 18px; }
+
+/* ====================== Cards & grids ====================== */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+}
+.card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.card-head h3 { font-size: 15.5px; display: flex; align-items: center; gap: 8px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+.grid-2 > .card, .grid-2-1 > .card { margin-bottom: 0; }
+.grid-2, .grid-2-1 { margin-bottom: 20px; }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  display: flex; gap: 14px; align-items: center;
+  box-shadow: var(--shadow);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08); }
+.stat-icon { width: 44px; height: 44px; border-radius: 11px; display: grid; place-items: center; flex-shrink: 0; }
+.stat-label { color: var(--muted); font-size: 12.5px; font-weight: 500; }
+.stat-value { font-size: 24px; font-weight: 700; margin-top: 2px; }
+.stat-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+.tone-blue { background: #dbeafe; color: #1d4ed8; }
+.tone-green { background: #dcfce7; color: #15803d; }
+.tone-amber { background: #fef3c7; color: #b45309; }
+.tone-red { background: #fee2e2; color: #b91c1c; }
+.tone-sky { background: #e0f2fe; color: #0369a1; }
+.tone-slate { background: #f1f5f9; color: #334155; }
+.tone-indigo { background: #e0e7ff; color: #4338ca; }
+.tone-violet { background: #ede9fe; color: #6d28d9; }
+
+/* ====================== Buttons ====================== */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 9px 16px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  font-weight: 600; font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s, transform 0.05s, opacity 0.15s;
+  white-space: nowrap;
+}
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.btn-primary { background: var(--primary); color: #fff; box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3); }
+.btn-primary:hover:not(:disabled) { background: var(--primary-600); }
+.btn-ghost { background: #fff; color: var(--text); border-color: var(--border); }
+.btn-ghost:hover:not(:disabled) { background: #f8fafc; border-color: #cbd5e1; }
+.btn-success { background: var(--green); color: #fff; }
+.btn-success:hover:not(:disabled) { background: #15803d; }
+.btn-danger { background: var(--red); color: #fff; }
+.btn-danger:hover:not(:disabled) { background: #b91c1c; }
+.btn-danger-ghost { background: #fff; color: var(--red); border-color: #fecaca; }
+.btn-danger-ghost:hover:not(:disabled) { background: #fef2f2; }
+.btn-sm { padding: 6px 11px; font-size: 13px; }
+.btn-lg { padding: 13px 26px; font-size: 15px; }
+.btn-block { width: 100%; }
+
+.icon-btn {
+  width: 34px; height: 34px;
+  display: inline-grid; place-items: center;
+  border-radius: 8px;
+  border: 0; background: transparent; color: var(--text-2);
+  cursor: pointer;
+}
+.icon-btn:hover:not(:disabled) { background: #f1f5f9; color: var(--text); }
+.icon-btn.danger:hover { background: #fef2f2; color: var(--red); }
+.icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.spin { animation: spin 0.8s linear infinite; }
+
+/* ====================== Forms ====================== */
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.field > span { font-size: 13px; font-weight: 500; color: var(--text-2); }
+.field.compact { margin-bottom: 0; min-width: 160px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+.span-2 { grid-column: span 2; }
+.input-icon { position: relative; display: flex; align-items: center; }
+.input-icon > svg { position: absolute; left: 12px; color: #94a3b8; pointer-events: none; }
+.input-icon input { width: 100%; padding-left: 38px; }
+.input-action {
+  position: absolute; right: 8px;
+  background: none; border: 0; color: #94a3b8; cursor: pointer; display: grid; place-items: center;
+}
+.toolbar { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+.toolbar.wrap-row { align-items: flex-end; margin: 16px 0 0; }
+.grow { flex: 1; min-width: 220px; }
+.align-end { align-self: flex-end; }
+
+/* ====================== Tables ====================== */
+.table-wrap { overflow-x: auto; margin: 0 -20px; padding: 0 20px; }
+.table { width: 100%; border-collapse: collapse; }
+.table th {
+  text-align: left;
+  font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--muted);
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.table th.right, .table th.num { text-align: right; }
+.table td { padding: 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+.table tbody tr:hover { background: #fafbff; }
+.table tbody tr:last-child td { border-bottom: 0; }
+.row-dirty { background: #fffbeb !important; }
+.register input[type='time'] { width: 120px; padding: 7px 9px; }
+.register .remarks { width: 100%; min-width: 140px; padding: 7px 10px; }
+
+.person { display: flex; align-items: center; gap: 10px; }
+.person-name { font-weight: 600; }
+.person-sub { font-size: 12px; color: var(--muted); }
+.avatar {
+  border-radius: 50%;
+  display: inline-grid; place-items: center; flex-shrink: 0;
+  background: linear-gradient(135deg, #dbeafe, #e0e7ff);
+  color: #3730a3; font-weight: 700;
+}
+
+.pagination { display: flex; justify-content: flex-end; align-items: center; gap: 8px; padding-top: 14px; }
+
+/* ====================== Badges & pills ====================== */
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 3px 10px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; text-transform: capitalize;
+  white-space: nowrap;
+}
+.badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; margin-right: 6px; }
+.badge-present { background: #dcfce7; color: #15803d; }
+.badge-late { background: #fef3c7; color: #b45309; }
+.badge-halfday { background: #e0e7ff; color: #4338ca; }
+.badge-absent { background: #fee2e2; color: #b91c1c; }
+.badge-leave { background: #e0f2fe; color: #0369a1; }
+.badge-muted { background: #f1f5f9; color: #64748b; }
+
+.status-picker { display: flex; gap: 4px; flex-wrap: nowrap; }
+.pill {
+  border: 1px solid var(--border); background: #fff; color: var(--text-2);
+  padding: 5px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: all 0.12s;
+}
+.pill:hover:not(:disabled) { border-color: #94a3b8; }
+.pill:disabled { opacity: 0.5; cursor: not-allowed; }
+.pill-present.active { background: var(--green); border-color: var(--green); color: #fff; }
+.pill-late.active { background: #f59e0b; border-color: #f59e0b; color: #fff; }
+.pill-halfday.active { background: var(--indigo); border-color: var(--indigo); color: #fff; }
+.pill-absent.active { background: var(--red); border-color: var(--red); color: #fff; }
+.pill-leave.active { background: var(--sky); border-color: var(--sky); color: #fff; }
+
+.chips { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: #fff; border: 1px solid var(--border); border-radius: 999px; padding: 5px 12px 5px 6px;
+}
+
+/* ====================== Tabs & segmented ====================== */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+.tab {
+  background: none; border: 0; padding: 10px 14px; cursor: pointer;
+  font-weight: 600; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.tab-count { background: var(--red); color: #fff; font-size: 11px; padding: 1px 7px; border-radius: 999px; }
+.tab-count.muted-count { background: #e2e8f0; color: var(--text-2); }
+.segmented { display: inline-flex; background: #f1f5f9; padding: 4px; border-radius: 10px; gap: 2px; }
+.segmented button {
+  border: 0; background: transparent; padding: 8px 16px; border-radius: 7px;
+  font-weight: 600; color: var(--text-2); cursor: pointer;
+}
+.segmented button.active { background: #fff; color: var(--primary); box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12); }
+
+/* ====================== Dashboard bits ====================== */
+.dept-list { display: flex; flex-direction: column; gap: 16px; }
+.dept-top { display: flex; justify-content: space-between; margin-bottom: 6px; gap: 10px; }
+.dept-name { font-weight: 600; }
+.progress { height: 8px; background: #eef2f7; border-radius: 999px; overflow: hidden; flex: 1; }
+.progress span { display: block; height: 100%; background: linear-gradient(90deg, #3b82f6, #6366f1); border-radius: 999px; }
+.progress span.low { background: linear-gradient(90deg, #f97316, #ef4444); }
+.pct { display: flex; align-items: center; gap: 10px; min-width: 150px; }
+.pct > span { font-weight: 600; font-variant-numeric: tabular-nums; width: 48px; text-align: right; }
+
+/* ====================== Check-in ====================== */
+.checkin-card {
+  display: grid; grid-template-columns: 1.1fr 1.4fr auto; gap: 28px; align-items: center;
+  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 55%, #6366f1 100%);
+  color: #fff; border-radius: 16px; padding: 28px 32px; box-shadow: 0 14px 40px rgba(37, 99, 235, 0.3);
+}
+.checkin-card .muted { color: #c7d2fe; }
+.clock { font-size: 40px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.checkin-times {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+  background: rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 16px;
+}
+.checkin-times > div { display: flex; flex-direction: column; gap: 6px; }
+.checkin-times strong { font-size: 17px; }
+.checkin-actions { display: flex; flex-direction: column; gap: 8px; align-items: stretch; min-width: 200px; }
+.checkin-actions .alert { margin: 0; }
+
+/* ====================== Reports ====================== */
+.report-banner {
+  display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.report-banner h3 { font-size: 17px; margin-bottom: 4px; }
+.report-kpis { display: flex; gap: 10px; flex-wrap: wrap; }
+.kpi { display: flex; flex-direction: column; align-items: center; padding: 8px 14px; border-radius: 10px; min-width: 78px; }
+.kpi strong { font-size: 18px; }
+.kpi span { font-size: 11.5px; font-weight: 500; }
+
+/* ====================== Profile ====================== */
+.profile-head { display: flex; gap: 16px; align-items: center; margin-bottom: 20px; }
+.profile-head h3 { font-size: 18px; }
+.details { margin: 0; display: grid; gap: 0; }
+.details > div { display: flex; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid #f1f5f9; }
+.details dt { color: var(--muted); }
+.details dd { margin: 0; font-weight: 500; }
+
+/* ====================== Alerts, empty, loader ====================== */
+.alert { padding: 11px 14px; border-radius: 9px; margin-bottom: 16px; font-weight: 500; font-size: 13.5px; }
+.alert-error { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+.alert-info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+.alert-success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+.empty { display: flex; flex-direction: column; align-items: center; padding: 40px 16px; color: #94a3b8; text-align: center; }
+.empty-title { font-weight: 600; color: var(--text-2); margin-top: 10px; }
+.empty-text { font-size: 13px; margin-top: 4px; }
+.loader { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 40px; color: var(--muted); }
+.loader-full { height: 100vh; }
+.spinner {
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 2.5px solid #dbeafe; border-top-color: var(--primary);
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ====================== Modal ====================== */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(2px);
+  display: grid; place-items: center; padding: 20px;
+  animation: fade 0.15s ease;
+}
+.modal {
+  background: #fff; width: 100%; border-radius: 14px; box-shadow: var(--shadow-lg);
+  max-height: calc(100vh - 40px); display: flex; flex-direction: column;
+  animation: pop 0.18s ease;
+}
+.modal-head { display: flex; justify-content: space-between; align-items: center; padding: 18px 22px; border-bottom: 1px solid var(--border); }
+.modal-head h3 { font-size: 17px; }
+.modal-body { padding: 20px 22px; overflow-y: auto; }
+.modal-body p { margin-top: 0; line-height: 1.55; }
+.modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 22px; border-top: 1px solid var(--border); }
+.modal-foot.inline { padding: 14px 0 0; margin-top: 4px; }
+@keyframes fade { from { opacity: 0; } }
+@keyframes pop { from { opacity: 0; transform: translateY(8px) scale(0.98); } }
+
+.date-nav { display: flex; align-items: center; gap: 4px; background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 3px; }
+.date-nav input { border: 0; padding: 6px 8px; box-shadow: none !important; }
+
+/* ====================== Login ====================== */
+.login-page { display: grid; grid-template-columns: 1.1fr 1fr; min-height: 100vh; }
+.login-hero {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.45), transparent 45%),
+    radial-gradient(circle at 80% 80%, rgba(37, 99, 235, 0.5), transparent 45%),
+    #0b1226;
+  color: #fff; padding: 40px 56px; display: flex; flex-direction: column; justify-content: space-between;
+}
+.brand-light .brand-name { font-size: 20px; }
+.hero-copy h1 { font-size: 40px; line-height: 1.15; max-width: 480px; letter-spacing: -0.02em; }
+.hero-copy p { color: #cbd5e1; font-size: 16px; max-width: 460px; line-height: 1.6; }
+.hero-points { list-style: none; padding: 0; margin: 28px 0 0; display: grid; gap: 14px; }
+.hero-points li { display: flex; align-items: center; gap: 12px; color: #e2e8f0; font-weight: 500; }
+.hero-points svg { color: #93c5fd; }
+.hero-foot { color: #64748b; font-size: 13px; }
+.login-panel { display: grid; place-items: center; padding: 32px; background: #fff; }
+.login-card { width: 100%; max-width: 380px; }
+.login-card h2 { font-size: 26px; margin-bottom: 6px; }
+.login-card > .muted { margin: 0 0 24px; }
+.login-card .btn-lg { margin-top: 8px; }
+
+/* ====================== Responsive ====================== */
+@media (max-width: 1100px) {
+  .grid-2-1, .grid-2 { grid-template-columns: 1fr; }
+  .checkin-card { grid-template-columns: 1fr; }
+}
+@media (max-width: 860px) {
+  .sidebar { transform: translateX(-100%); box-shadow: var(--shadow-lg); }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-backdrop { display: block; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); z-index: 30; }
+  .main { margin-left: 0; }
+  .mobile-only { display: inline-grid; }
+  .content { padding: 18px; }
+  .topbar { padding: 0 16px; }
+  .topbar-user-text { display: none; }
+  .login-page { grid-template-columns: 1fr; }
+  .login-hero { display: none; }
+  .form-grid { grid-template-columns: 1fr; }
+  .span-2 { grid-column: auto; }
+  .checkin-times { grid-template-columns: repeat(2, 1fr); }
+  .clock { font-size: 32px; }
+}
+
+/* ---- preview-only additions ---- */
+#toasts { position: fixed; top: 16px; right: 16px; z-index: 200; display: flex; flex-direction: column; gap: 8px; }
+.toast {
+  background: #0f172a; color: #fff; padding: 11px 16px; border-radius: 10px; font-size: 13.5px; font-weight: 500;
+  box-shadow: 0 10px 30px rgba(15,23,42,.25); animation: pop .2s ease; max-width: 340px; display: flex; gap: 8px; align-items: center;
+}
+.toast.ok::before { content: '✓'; color: #4ade80; font-weight: 700; }
+.toast.err { background: #7f1d1d; }
+.toast.err::before { content: '!'; color: #fecaca; font-weight: 700; }
+.demo-box { margin-top: 22px; padding: 14px; border: 1px dashed #cbd5e1; border-radius: 10px; background: #f8fafc; }
+.demo-box .muted { margin: 0 0 10px; }
+.demo-row { display: flex; gap: 8px; }
+.demo-row .btn { flex: 1; }
+.chart-box { position: relative; height: 290px; }
+.icon { width: 18px; height: 18px; flex-shrink: 0; }
+.icon-sm { width: 15px; height: 15px; }
+.topbar .btn-sm { margin-right: 4px; }
+.nav-link { text-decoration: none; }
+.reset-link { background: none; border: 0; color: var(--muted); text-decoration: underline; cursor: pointer; font-size: 12.5px; padding: 0; }
+.badge { text-transform: none; }
+.icon-btn.mobile-only { display: none; }
+@media (max-width: 860px) { .icon-btn.mobile-only { display: inline-grid; } .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } .stat-card { padding: 12px; gap: 10px; } .stat-icon { width: 36px; height: 36px; } .stat-value { font-size: 20px; } }
+.live-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#4ade80; margin-right:6px; box-shadow:0 0 0 3px rgba(74,222,128,.25); }
+
+/* ================= Theme: Fresh Green (dark green sidebar, green + white, light grey background) ================= */
+:root {
+  --primary: #16a34a;
+  --primary-600: #15803d;
+  --primary-50: #ecfdf3;
+  --bg: #f3f5f4;
+  --border: #e3e8e5;
+  --text: #1d2130;
+  --text-2: #4b5161;
+  --muted: #7a8090;
+  --sidebar: #0b3b2c;
+  --radius: 12px;
+  --shadow: 0 1px 2px rgba(16, 24, 40, .04);
+}
+body { font-size: 13.5px; }
+.badge::before { display: none; }
+.badge { padding: 3px 9px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+.badge-present { background: #e7f6ec; color: #1f7a3d; }
+.badge-late { background: #fdf1df; color: #a35c0a; }
+.badge-halfday { background: #fde8e7; color: #c0362c; }
+.badge-absent { background: #fde2e1; color: #b42318; }
+.badge-leave { background: #e5f1fb; color: #1f6aa5; }
+.badge-holiday { background: #eef0f4; color: #4b5161; }
+.badge-working { background: #e7f6ec; color: #1f7a3d; display: inline-block; }
+.badge-muted { background: #f1f2f5; color: #6b7280; }
+
+/* Sidebar */
+.sidebar { background: var(--sidebar); padding: 0; color: #d7ece2; }
+.brand { padding: 16px 20px; margin: 0; border-bottom: 1px solid #14513d; gap: 12px; }
+.brand-logo { width: 36px; height: 36px; border-radius: 9px; background: #22c55e; box-shadow: none; }
+.brand-name { font-size: 14.5px; font-weight: 700; letter-spacing: .01em; }
+.brand-sub { font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: #a9d6c1; margin-top: 1px; }
+.nav { padding: 6px 0 12px; gap: 0; overflow-y: auto; }
+.nav-section { padding: 18px 20px 8px; font-size: 10.5px; letter-spacing: .14em; color: #9ccbb6; }
+.nav-link { border-radius: 0; padding: 9px 20px 9px 17px; color: #d7ece2; font-size: 13.5px; font-weight: 500; border-left: 3px solid transparent; gap: 12px; }
+.nav-link .icon { width: 17px; height: 17px; }
+.nav-link:hover { background: #11493a; color: #fff; }
+.nav-link.active { background: #0f4433; color: var(--primary); border-left-color: var(--primary); box-shadow: none; font-weight: 600; }
+.side-user { margin-top: auto; border-top: 1px solid #14513d; padding: 12px 14px 12px 20px; display: flex; align-items: center; gap: 10px; }
+.side-user-text { flex: 1; min-width: 0; }
+.side-user-name { color: #fff; font-weight: 600; font-size: 13px; }
+.side-user-role { color: #9ccbb6; font-size: 11.5px; }
+.side-logout { color: #9ccbb6; }
+.side-logout:hover { background: #14513d !important; color: #fca5a5 !important; }
+.avatar-brand { background: #22c55e !important; color: #fff !important; }
+
+/* Topbar */
+.topbar { height: 56px; background: #fff; backdrop-filter: none; padding: 0 24px; }
+.crumbs { display: flex; align-items: center; gap: 10px; flex: 1; font-size: 13px; color: var(--muted); min-width: 0; }
+.crumbs strong { color: var(--text); font-weight: 600; }
+.crumb-brand { font-weight: 700 !important; }
+.crumb-sep-bar { width: 1px; height: 16px; background: var(--border); }
+.icon-xs { width: 13px; height: 13px; }
+.topbar-right { display: flex; align-items: center; gap: 14px; }
+.topbar-date { color: var(--muted); font-size: 12.5px; }
+
+.content { padding: 28px 40px 40px; max-width: 1480px; margin: 0 auto; }
+.app-foot { margin-top: auto; padding: 10px 24px; text-align: right; font-size: 11.5px; color: var(--muted); border-top: 1px solid var(--border); background: #fff; }
+.main { min-height: 100vh; }
+.page-header h1 { font-size: 21px; font-weight: 600; }
+.page-header p { font-size: 13.5px; }
+
+/* Cards / buttons */
+.card { border-radius: 12px; box-shadow: var(--shadow); }
+.card.flush { padding: 0; overflow: hidden; }
+.card-head.padded { padding: 18px 20px 14px; margin: 0; flex-wrap: wrap; gap: 10px; }
+.card.flush .table-wrap { margin: 0; padding: 0; }
+.card.flush .empty { padding-bottom: 36px; }
+.btn { font-weight: 500; font-size: 13.5px; border-radius: 8px; }
+.btn-primary { box-shadow: none; }
+.btn-outline { background: #fff; border: 1px solid #d5d8e0; color: var(--text); }
+.btn-outline:hover:not(:disabled) { border-color: #b6bac6; background: #fafbfc; }
+.stat-card, .ws-stat { box-shadow: var(--shadow); }
+.stat-card:hover { transform: none; box-shadow: 0 4px 14px rgba(16, 24, 40, .06); }
+.tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.segmented button.active { color: var(--primary); }
+.link { color: var(--primary); }
+.progress span { background: linear-gradient(90deg, #4ade80, #16a34a); }
+.avatar { background: #f1f2f6; color: #3d4252; }
+input:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(22, 163, 74, .14); }
+.spinner { border-color: #bbf7d0; border-top-color: var(--primary); }
+
+/* Workspace */
+.ws-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 26px; }
+.ws-stat { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 18px; display: flex; gap: 14px; align-items: flex-start; }
+.ws-stat-icon { width: 38px; height: 38px; border-radius: 9px; display: grid; place-items: center; flex-shrink: 0; }
+.ws-stat-icon .icon { width: 18px; height: 18px; }
+.ws-stat-value { font-size: 19px; font-weight: 700; line-height: 1.2; }
+.ws-stat-label { font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--text-2); margin-top: 3px; }
+.ws-stat-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.tone-violet { background: #f1ecfd; color: #7c3aed; }
+.tone-amber { background: #fdf1e3; color: #b8651b; }
+.tone-red { background: #fdeceb; color: #d1403a; }
+.tone-green { background: #e7f6ec; color: #1f7a3d; }
+
+.ws-tabs { display: flex; gap: 6px; margin-bottom: 26px; flex-wrap: wrap; }
+.ws-tab { display: inline-flex; align-items: center; gap: 8px; border: 0; background: transparent; padding: 9px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; color: #5d6474; cursor: pointer; }
+.ws-tab:hover { color: var(--text); background: rgba(255, 255, 255, .6); }
+.ws-tab.active { background: #fff; color: #14532d; box-shadow: 0 1px 3px rgba(16, 24, 40, .08); }
+.ws-tab.active .icon { color: var(--primary); }
+
+.shift-card { padding: 22px 20px 18px; }
+.shift-top { display: flex; justify-content: space-between; gap: 20px; align-items: center; padding-bottom: 18px; border-bottom: 1px solid var(--border); }
+.shift-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+.shift-line { display: flex; align-items: center; gap: 6px; color: #4b5161; font-size: 14px; margin-top: 5px; }
+.shift-sub { font-size: 12.5px; margin-top: 8px; }
+.shift-actions { display: flex; gap: 10px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+.shift-bottom { padding-top: 14px; }
+.mono { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; }
+.strong { font-weight: 700; color: var(--text); }
+.tone-text-green { color: #1f9d55; }
+.tone-text-red { color: #d1403a; }
+.s-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.s-chip { display: inline-block; padding: 4px 9px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+.chip-expected { background: #fbeee0; color: #7a4a14; }
+.chip-live { background: #fde9e2; color: #8f3418; }
+.chip-done { background: #e9f6ee; color: #1f6b3a; }
+.chip-idle { background: #eef1f6; color: #3f4a5f; }
+.chip-missed { background: #fde2e1; color: #b42318; }
+.ot-tag { display: inline-block; background: #f1ecfd; color: #6d28d9; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 5px; }
+.live { color: #1f9d55; font-weight: 600; }
+.cell-note { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+.ws-table td { padding: 12px 16px; }
+.ws-table th { padding: 11px 16px; background: #fafbfc; }
+.ws-table tfoot td { background: #fafbfc; border-top: 1px solid var(--border); padding: 12px 16px; }
+.row-today { background: #f3fbf6; }
+.week-label { font-weight: 600; font-size: 13px; padding: 0 6px; white-space: nowrap; }
+.demo-clock { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 16px; border: 1px dashed #d5d8e0; border-radius: 10px; color: var(--muted); font-size: 12.5px; background: #fff; }
+.demo-clock span { display: inline-flex; align-items: center; gap: 6px; }
+.demo-clock select { padding: 6px 10px; }
+
+.ot-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background: #f8f9fb; border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+.ot-summary span { display: block; font-size: 11.5px; color: var(--muted); }
+.ot-summary strong { font-size: 13.5px; }
+.ot-preview { min-height: 22px; font-size: 13px; color: var(--text-2); margin-bottom: 6px; }
+
+.slip-meta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 18px; }
+.slip-meta > div { background: #fff; padding: 10px 14px; }
+.slip-meta span { display: block; font-size: 11.5px; color: var(--muted); }
+.slip-meta strong { font-size: 13.5px; }
+.slip-grid { margin-bottom: 14px; }
+.slip { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.slip td, .slip th { padding: 10px 14px; }
+.slip tfoot td { background: #fafbfc; border-top: 1px solid var(--border); }
+.net-pay { display: flex; justify-content: space-between; align-items: center; background: var(--primary-50); color: #7a2016; border-radius: 10px; padding: 14px 18px; font-size: 15px; }
+.net-pay strong { font-size: 20px; }
+
+/* Login */
+.login-hero { background: radial-gradient(circle at 15% 15%, rgba(22, 163, 74, .35), transparent 40%), radial-gradient(circle at 85% 85%, rgba(22, 163, 74, .18), transparent 45%), #0b3b2c; }
+.hero-points svg { color: #f2a196; }
+
+@media (max-width: 1100px) {
+  .ws-stats { grid-template-columns: repeat(2, 1fr); }
+  .slip-meta { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 860px) {
+  .content { padding: 18px; }
+  .topbar-date { display: none; }
+  .shift-top { flex-direction: column; align-items: flex-start; }
+  .shift-actions { justify-content: flex-start; }
+  .ws-stats { gap: 10px; }
+  .ws-stat { padding: 12px; gap: 10px; }
+  .ot-summary { grid-template-columns: 1fr; }
+  .crumbs > :not(:last-child) { display: none; }
+}
+
+/* ================= Employee Dashboard (HR 360° view) ================= */
+.ed { --ed-orange: #22c55e; --ed-purple: #15803d; --ed-lav: #e8f7ee; --ed-ink: #1b1b1f; }
+.ed-top { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+.ed-back { display: inline-flex; align-items: center; gap: 10px; color: var(--ed-ink); }
+.ed-back h1 { font-size: 21px; font-weight: 600; }
+.ed-search { width: 260px; }
+.ed-search input { border-radius: 999px; background: #fff; }
+.ed-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 22px; }
+.ed-tabs button { border: 0; background: #ececef; color: #3b3b42; padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 500; cursor: pointer; transition: background .15s; }
+.ed-tabs button:hover { background: #e0e0e6; }
+.ed-tabs button.on { background: var(--ed-ink); color: #fff; }
+
+.ed-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; align-items: start; }
+.ed-main { background: #fff; border: 1px solid var(--border); border-radius: 18px; padding: 22px 24px; min-width: 0; }
+.ed-person { display: flex; align-items: center; gap: 16px; margin-bottom: 22px; flex-wrap: wrap; }
+.ed-avatar { width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 20px; color: #fff;
+  background: linear-gradient(135deg, #22c55e, #15803d); box-shadow: 0 0 0 3px #fff, 0 0 0 5px #22c55e33; }
+.ed-person-text { flex: 1; min-width: 160px; }
+.ed-person-text h2 { font-size: 23px; font-weight: 600; letter-spacing: -.01em; }
+.ed-person-text span { color: #555a66; font-size: 13px; }
+.ed-person-actions { display: flex; gap: 10px; }
+.ed-btn-outline, .ed-btn-solid { border-radius: 999px; padding: 9px 26px; font-size: 13px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.ed-btn-outline { background: #fff; border: 1.5px solid var(--ed-orange); color: var(--ed-orange); }
+.ed-btn-outline:hover { background: #fff6ec; }
+.ed-btn-solid { background: var(--ed-orange); border: 1.5px solid var(--ed-orange); color: #fff; }
+.ed-btn-solid:hover { background: #e9840d; }
+
+.ed-sec-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 6px 0 12px; flex-wrap: wrap; }
+.ed-sec-head h3 { font-size: 17px; font-weight: 600; }
+.ed-legend { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #555a66; }
+.ed-legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-left: 8px; }
+.ed-chart { position: relative; height: 230px; margin-bottom: 26px; }
+
+.ed-pager { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.ed-pager button, .ed-pager span { border: 0; border-right: 1px solid var(--border); background: #fff; min-width: 34px; padding: 6px 10px; font-size: 12.5px; color: #3b3b42; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; justify-content: center; }
+.ed-pager > :last-child { border-right: 0; }
+.ed-pager button.on { background: #ecf8f1; color: var(--ed-purple); font-weight: 600; }
+.ed-pager button:disabled { color: #b9bcc6; cursor: not-allowed; }
+.ed-table-wrap { border: 1px solid var(--border); border-radius: 12px; overflow-x: auto; }
+.ed-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.ed-table th { background: #ecf8f1; text-align: left; font-weight: 500; color: #3b3b42; padding: 11px 14px; white-space: nowrap; }
+.ed-table td { padding: 11px 14px; border-top: 1px solid #f0f0f4; }
+.ed-pill-btn { background: none; border: 0; padding: 0; cursor: pointer; }
+.ed-status { display: inline-block; min-width: 74px; text-align: center; padding: 5px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 500; }
+.ed-status.paid { border: 1.5px solid var(--ed-purple); color: var(--ed-purple); background: #fff; }
+.ed-status.pending { background: var(--ed-orange); color: #fff; border: 1.5px solid var(--ed-orange); }
+.ed-mini-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+.ed-mini-kpis div { background: #f4faf6; border-radius: 12px; padding: 12px 14px; }
+.ed-mini-kpis strong { display: block; font-size: 18px; }
+.ed-mini-kpis span { font-size: 12px; color: #555a66; }
+#ed-month { padding: 6px 10px; }
+
+.ed-side { display: flex; flex-direction: column; gap: 14px; }
+.ed-docs { background: var(--ed-lav); border-radius: 18px; padding: 20px 18px 18px; }
+.ed-docs h3 { font-size: 17px; font-weight: 600; margin-bottom: 12px; }
+.ed-docs ul { list-style: none; padding: 0; margin: 0 0 18px; }
+.ed-folder { display: flex; align-items: center; gap: 10px; width: 100%; background: none; border: 0; padding: 8px 4px; font-size: 14px; color: #26262c; cursor: pointer; text-align: left; border-radius: 8px; }
+.ed-folder:hover { background: rgba(255,255,255,.6); }
+.ed-folder em { font-style: normal; color: #8c8f9b; font-size: 13px; }
+.ed-files { padding: 2px 6px 8px 32px; display: grid; gap: 5px; font-size: 12.5px; color: #3b3b42; }
+.ed-files div { display: flex; align-items: center; gap: 6px; }
+.ed-upload { width: 100%; background: var(--ed-ink); color: #fff; border: 0; border-radius: 999px; padding: 11px; font-size: 13.5px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.ed-upload:hover { background: #072b20; }
+.ed-docs.full { background: #f4faf6; }
+
+.ed-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ed-tile { position: relative; overflow: hidden; border-radius: 14px; padding: 14px; min-height: 124px; color: #fff; display: flex; flex-direction: column; }
+.ed-tile span { font-size: 13px; opacity: .95; position: relative; }
+.ed-tile strong { font-size: 34px; font-weight: 700; line-height: 1.1; margin-top: 10px; position: relative; letter-spacing: -.02em; }
+.ed-tile small { font-size: 11.5px; opacity: .85; margin-top: 4px; position: relative; }
+.ed-tile-art { position: absolute; right: -8px; bottom: -10px; width: 74px; height: 74px; opacity: .22; stroke-width: 2.4; }
+.t-orange { background: var(--ed-orange); }
+.t-purple { background: var(--ed-purple); }
+.t-grey { background: #a5a5ab; }
+.t-black { background: #1f1f23; }
+
+.link-btn { background: none; border: 0; padding: 0; cursor: pointer; text-align: left; font: inherit; color: inherit; }
+.link-btn:hover .person-name { color: var(--primary); text-decoration: underline; }
+
+@media (max-width: 1100px) { .ed-grid { grid-template-columns: 1fr; } .ed-side { display: grid; grid-template-columns: 1fr 1fr; } }
+@media (max-width: 860px) {
+  .ed-side { grid-template-columns: 1fr; }
+  .ed-main { padding: 16px; }
+  .ed-search { width: 100%; }
+  .ed-mini-kpis { grid-template-columns: repeat(2, 1fr); }
+  .ed-person-actions { width: 100%; }
+  .ed-person-actions button { flex: 1; justify-content: center; }
+}
+.ed-table td { white-space: nowrap; }
+.ed-btn-outline, .ed-btn-solid { white-space: nowrap; }
+.ed-files div { display: grid; grid-template-columns: auto 1fr auto; gap: 6px; align-items: center; }
+.ed-files div > :nth-child(2), .ed-files div { min-width: 0; }
+.ed-side .ed-files .muted.small:not(:only-child) { display: none; }
+.ed-docs.full .ed-files .muted.small { display: inline; }
+.ed-fname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ================= OT button, OT menu, Kiosk ================= */
+.btn-ot { background: #f1ecfd; color: #6d28d9; border: 1px solid #d9cbfb; }
+.btn-ot:hover:not(:disabled) { background: #e7defc; }
+.btn-ot.running { background: #7c3aed; color: #fff; border-color: #7c3aed; animation: otpulse 2s infinite; }
+.btn-ot.running .mono { background: rgba(255,255,255,.18); padding: 1px 6px; border-radius: 5px; font-size: 12px; }
+@keyframes otpulse { 0%,100% { box-shadow: 0 0 0 0 rgba(124,58,237,.35); } 50% { box-shadow: 0 0 0 6px rgba(124,58,237,0); } }
+.ot-line { color: #6d28d9 !important; font-weight: 500; }
+.ot-choice { display: grid; grid-template-columns: 40px 1fr auto; gap: 14px; align-items: center; padding: 14px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px; }
+.ot-choice p { margin: 4px 0 0; font-size: 12.5px; color: var(--text-2); }
+.ot-choice.is-off { background: #fafafb; }
+.ot-choice-icon { width: 40px; height: 40px; border-radius: 10px; background: #f1ecfd; color: #6d28d9; display: grid; place-items: center; }
+
+.btn-kiosk { margin-top: 12px; background: #0b3b2c; color: #fff; padding: 11px; }
+.btn-kiosk:hover { background: #072b20; }
+#demo-emp { flex: 1; padding: 6px 10px; font-size: 13px; }
+
+.kiosk { min-height: 100vh; background: #f3f4f7; display: flex; flex-direction: column; }
+.kiosk-head { background: #0b3b2c; color: #fff; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 28px; flex-wrap: wrap; }
+.kiosk-head .brand { border: 0; padding: 0; }
+.kiosk-clock { text-align: center; color: #a9d6c1; font-size: 12.5px; }
+.kiosk-clock #k-clock { color: #fff; font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.kiosk-exit { background: #14513d; color: #e4e4e7; border: 1px solid #1d6b51; }
+.kiosk-exit:hover { background: #26262b; }
+.kiosk-body { max-width: 1200px; width: 100%; margin: 0 auto; padding: 32px 28px 40px; }
+.kiosk-body h1 { font-size: 24px; font-weight: 600; text-align: center; }
+.kiosk-body > p { text-align: center; color: var(--muted); margin: 6px 0 20px; }
+.kiosk-search { max-width: 420px; margin: 0 auto 24px; }
+.kiosk-search input { border-radius: 999px; padding: 12px 16px 12px 40px; font-size: 15px; }
+.kiosk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
+.kiosk-card { background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 20px 14px 16px; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; font: inherit; transition: transform .12s, box-shadow .12s, border-color .12s; }
+.kiosk-card:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(16,24,40,.08); border-color: #f0b5ae; }
+.kiosk-name { font-weight: 600; font-size: 15px; margin-top: 4px; text-align: center; }
+.kiosk-sub { font-size: 12px; color: var(--muted); text-align: center; }
+.kiosk-status { margin-top: 6px; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; display: inline-block; }
+.k-none { background: #f1f2f5; color: #6b7280; }
+.k-in { background: #e7f6ec; color: #1f7a3d; }
+.k-out { background: #e5f1fb; color: #1f6aa5; }
+.k-ot { background: #f1ecfd; color: #6d28d9; }
+.k-off { background: #fdf1df; color: #a35c0a; }
+.kiosk-note { text-align: center; color: var(--muted); font-size: 12.5px; margin-top: 26px; }
+.k-dots { display: flex; justify-content: center; gap: 14px; margin: 6px 0 12px; }
+.k-dots i { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #c9ccd6; }
+.k-dots i.on { background: var(--primary); border-color: var(--primary); }
+.k-pin-input { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
+.k-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
+.k-pad button { height: 54px; border-radius: 12px; border: 1px solid var(--border); background: #fff; font-size: 20px; font-weight: 600; cursor: pointer; }
+.k-pad button:hover { background: #f7f7f9; }
+.k-pad .k-ok { background: var(--primary); color: #fff; border-color: var(--primary); font-size: 15px; }
+.k-pad .k-del { font-size: 18px; color: var(--muted); }
+.k-who { display: flex; gap: 12px; align-items: center; }
+.k-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.k-act { border: 0; border-radius: 14px; padding: 18px 12px; color: #fff; font-size: 16px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.k-act .icon { width: 26px; height: 26px; }
+.k-act small { font-size: 11px; font-weight: 500; opacity: .9; }
+.k-act:disabled { opacity: .45; cursor: not-allowed; }
+.k-green { background: #16a34a; } .k-red { background: #dc2626; } .k-purple { background: #7c3aed; }
+.k-done { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; padding: 10px 0; }
+.k-done .icon { width: 56px; height: 56px; color: #16a34a; }
+.k-done strong { font-size: 18px; }
+@media (max-width: 860px) { .kiosk-body { padding: 20px 14px; } .kiosk-grid { grid-template-columns: repeat(2, 1fr); } .ot-choice { grid-template-columns: 1fr; } .ot-choice-icon { display: none; } }
+
+
+/* Fresh Green: sidebar active accent readable on dark green */
+.nav-link.active { color: #4ade80; border-left-color: #4ade80; background: #0f4433; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toasts"></div>
+<div id="modal-root"></div>
+<script>
+(() => {
+  'use strict';
+
+  /* ===================== Config ===================== */
+  const SETTINGS = { company: 'Acme Technologies', weeklyOff: [0] };
+  const SHIFTS = [
+    { key: 'morning', label: 'Morning', start: '09:00', end: '13:00' },
+    { key: 'afternoon', label: 'Afternoon', start: '15:00', end: '19:00' },
+  ];
+  const OPEN_EARLY = 30; // minutes before a shift that clock-in opens
+  const GRACE = 15; // minutes after shift start before "Late"
+  const EXPECTED_MIN = 480; // 8 h per working day
+  const HOLIDAYS = {
+    '2026-01-26': 'Republic Day', '2026-08-15': 'Independence Day', '2026-10-02': 'Gandhi Jayanti',
+    '2026-11-24': 'Guru Tegh Bahadur Martyrdom Day', '2026-12-25': 'Christmas', '2027-01-26': 'Republic Day',
+  };
+  const STATUSES = ['Present', 'Late', 'Half-day', 'Absent', 'Leave'];
+  const LEAVE_TYPES = ['Casual', 'Sick', 'Earned', 'Unpaid', 'Other'];
+  const OT_REASONS = ['Worked extra time (overtime)', 'Leaving early', 'Forgot to clock out', 'Site / client visit', 'Other'];
+  const COLORS = { Present: '#16a34a', Late: '#f59e0b', 'Half-day': '#6366f1', Absent: '#ef4444', Leave: '#0ea5e9', 'Not marked': '#cbd5e1' };
+  const KEY = 'attendpro-demo-v3';
+
+  /* ===================== Helpers ===================== */
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const pad = (n) => String(n).padStart(2, '0');
+  const ds = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const today = () => ds(new Date());
+  const addDays = (s, n) => { const d = new Date(`${s}T00:00:00`); d.setDate(d.getDate() + n); return ds(d); };
+  const dow = (s) => new Date(`${s}T00:00:00`).getDay();
+  const fmtDate = (s, o) => (s ? new Date(`${s}T00:00:00`).toLocaleDateString('en-IN', o || { day: '2-digit', month: 'short', year: 'numeric' }) : '—');
+  const weekday = (s) => fmtDate(s, { weekday: 'short' });
+  const toMin = (h) => { if (!h) return null; const [a, b] = h.split(':').map(Number); return a * 60 + b; };
+  const minToHH = (m) => `${pad(Math.floor(m / 60))}:${pad(Math.floor(m) % 60)}`;
+  const fmt12 = (h) => { if (!h) return '—'; let [a, b] = h.split(':').map(Number); const ap = a >= 12 ? 'PM' : 'AM'; a = a % 12 || 12; return `${pad(a)}:${pad(b)} ${ap}`; };
+  const hm = (m) => (m ? `${Math.floor(m / 60)}h ${pad(Math.round(m) % 60)}m` : '—');
+  const hrs = (m) => Math.round(((m || 0) / 60) * 10) / 10;
+  const hms = (s) => { s = Math.max(0, Math.floor(s)); return `${pad(Math.floor(s / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`; };
+  const money = (n) => `₹${Math.round(n).toLocaleString('en-IN')}`;
+  const isHoliday = (d) => HOLIDAYS[d];
+  const isWeeklyOff = (d) => SETTINGS.weeklyOff.includes(dow(d));
+  const isOff = (d) => isWeeklyOff(d) || !!HOLIDAYS[d];
+  const eachDay = (f, t) => { const o = []; for (let d = f; d <= t; d = addDays(d, 1)) o.push(d); return o; };
+  const weekRange = (s) => { const w = dow(s); const from = addDays(s, w === 0 ? -6 : 1 - w); return { from, to: addDays(from, 6) }; };
+  const monthRange = (ym) => { const [y, m] = ym.split('-').map(Number); return { from: `${ym}-01`, to: `${ym}-${pad(new Date(y, m, 0).getDate())}` }; };
+  const monthLabel = (ym) => new Date(`${ym}-01T00:00:00`).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+  const uid = () => Math.random().toString(36).slice(2, 10);
+  const initials = (n) => (n || '').split(' ').filter(Boolean).slice(0, 2).map((p) => p[0].toUpperCase()).join('');
+  const cls = (s) => (s || '').toLowerCase().replace(/[^a-z]/g, '');
+  const workingDays = (f, t) => eachDay(f, t).filter((d) => !isOff(d));
+  const OT_SHIFT = { key: 'ot', label: 'Overtime', start: '00:00', end: '23:59' }; // separate overtime timer
+  const shiftOf = (k) => (k === 'ot' ? OT_SHIFT : SHIFTS.find((s) => s.key === k));
+  const isReg = (s) => s.shift !== 'ot';
+  const inShiftHours = (nm) => SHIFTS.find((sh) => nm >= toMin(sh.start) && nm < toMin(sh.end));
+
+  /* ---- clock (with optional demo simulation) ---- */
+  let sim = null; // { real: ms, sec: seconds-of-day }
+  const nowSec = () => {
+    if (sim) return Math.min(86399, sim.sec + (Date.now() - sim.real) / 1000);
+    const d = new Date(); return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds() + d.getMilliseconds() / 1000;
+  };
+  const nowMinF = () => nowSec() / 60;
+  const nowHH = () => minToHH(Math.floor(nowMinF()));
+
+  /* ---- shift sessions → day record ---- */
+  const sessionMins = (s) => {
+    if (!s.in) return 0;
+    const end = s.out ? toMin(s.out) : nowMinF();
+    return Math.max(0, end - toMin(s.in));
+  };
+
+  // Auto clock-out at shift end, then derive check-in/out, hours, overtime and status
+  function syncRec(rec, date) {
+    if (!rec || !rec.sessions) return false;
+    let changed = false;
+    const nm = date === today() ? nowMinF() : 1e9;
+    rec.sessions.forEach((s) => {
+      if (!s.out && nm >= toMin(shiftOf(s.shift).end)) { s.out = shiftOf(s.shift).end; s.auto = true; changed = true; }
+    });
+    const ses = [...rec.sessions].sort((a, b) => toMin(a.in) - toMin(b.in));
+    if (!ses.length) return changed;
+    rec.checkIn = ses[0].in;
+    const last = ses[ses.length - 1];
+    rec.checkOut = last.out || null;
+    rec.workMinutes = Math.round(ses.filter((s) => s.out).reduce((a, s) => a + sessionMins(s), 0));
+    rec.otMinutes = ses.filter((s) => s.out).reduce((a, s) => a + (isReg(s) ? Math.max(0, toMin(s.out) - toMin(shiftOf(s.shift).end)) : sessionMins(s)), 0);
+    if (rec.source !== 'admin' && rec.status !== 'Leave') {
+      const reg = ses.filter(isReg);
+      const prev = rec.status;
+      if (!reg.length) {
+        // overtime only: fine on a day off; on a working day both shifts were missed
+        rec.autoHalf = false;
+        rec.status = isOff(date) || nm < toMin(SHIFTS[SHIFTS.length - 1].end) ? 'Present' : 'Absent';
+      } else {
+        const missed = SHIFTS.filter((sh) => !reg.some((s) => s.shift === sh.key) && nm >= toMin(sh.end)).length;
+        const first = reg[0];
+        rec.autoHalf = missed > 0;
+        rec.status = missed > 0 ? 'Half-day' : toMin(first.in) > toMin(shiftOf(first.shift).start) + GRACE ? 'Late' : 'Present';
+      }
+      if (prev !== rec.status) changed = true;
+    }
+    return changed;
+  }
+
+  /* ===================== Icons ===================== */
+  const P = {
+    dashboard: '<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>',
+    users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+    clipboard: '<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>',
+    calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+    calCheck: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="m9 16 2 2 4-4"/>',
+    calX: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="m10 14 4 4m0-4-4 4"/>',
+    chart: '<path d="M3 3v18h18"/><path d="M7 16v-4M11 16V8M15 16v-6M19 16V5"/>',
+    clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+    user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+    badge: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="12" cy="10" r="2.5"/><path d="M8 16a4 4 0 0 1 8 0"/>',
+    logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/>',
+    login: '<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5M15 12H3"/>',
+    menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+    check: '<path d="M20 6 9 17l-5-5"/>',
+    helmet: '<path d="M2 18h20"/><path d="M4 18v-3a8 8 0 0 1 16 0v3"/><path d="M10 7V5h4v2"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+    edit: '<path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>',
+    trash: '<path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+    x: '<path d="M18 6 6 18M6 6l12 12"/>',
+    save: '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/>',
+    sheet: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8M12 13v8"/>',
+    file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>',
+    refresh: '<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>',
+    left: '<path d="m15 18-6-6 6-6"/>',
+    right: '<path d="m9 18 6-6-6-6"/>',
+    userCheck: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m16 11 2 2 4-4"/>',
+    userX: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m17 8 5 5m0-5-5 5"/>',
+    alert: '<circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>',
+    percent: '<path d="M19 5 5 19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>',
+    timer: '<path d="M10 2h4M12 14l3-3"/><circle cx="12" cy="14" r="8"/>',
+    play: '<path d="m6 3 14 9-14 9z"/>',
+    ban: '<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>',
+    key: '<circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6M15.5 7.5l3 3L22 7l-3-3"/>',
+    inbox: '<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
+    rupee: '<path d="M6 3h12M6 8h12M6 13l8.5 8M6 13h3a5 5 0 0 0 0-10"/>',
+    hourglass: '<path d="M5 22h14M5 2h14M17 22v-4.17a2 2 0 0 0-.59-1.42L12 12l-4.41 4.41A2 2 0 0 0 7 17.83V22M7 2v4.17a2 2 0 0 0 .59 1.42L12 12l4.41-4.41A2 2 0 0 0 17 6.17V2"/>',
+    idcard: '<rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="12" r="2.5"/><path d="M14 10h5M14 14h4"/>',
+    folder: '<path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
+    folderOpen: '<path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/>',
+    upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5M12 3v12"/>',
+    palm: '<path d="M13 8c0-2.76-2.46-5-5.5-5S2 5.24 2 8h2l1-1 1 1h4"/><path d="M13 7.14A5.82 5.82 0 0 1 16.5 6c3.04 0 5.5 2.24 5.5 5h-3l-1-1-1 1h-3"/><path d="M5.89 9.71c-2.15 2.15-2.3 5.47-.35 7.43l4.24-4.25.7-.7.71-.71 2.12-2.12c-1.95-1.96-5.27-1.8-7.42.35"/><path d="M11 15.5c.5 2.5-.17 4.5-1 6.5h4c2-5.5-.5-12-1-14"/>',
+    virus: '<circle cx="12" cy="12" r="5"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5M4.9 4.9l3.5 3.5M15.6 15.6l3.5 3.5M4.9 19.1l3.5-3.5M15.6 8.4l3.5-3.5"/>',
+    tablet: '<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M12 18h.01"/>',
+    checkCircle: '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+    ot: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M5 3 2 6M22 6l-3-3"/>',
+  };
+  const ic = (n, c = 'icon') => `<svg class="${c}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${P[n] || ''}</svg>`;
+
+  /* ===================== Demo data (stored in this browser) ===================== */
+  function rng(seed) {
+    return () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  }
+
+  function seed() {
+    const r = rng(2026);
+    const ri = (a, b) => a + Math.floor(r() * (b - a + 1));
+    const people = [
+      ['EMP001', 'Priya Sharma', 'Engineering', 'Site Engineer', 13000],
+      ['EMP002', 'Rahul Verma', 'Engineering', 'Frontend Developer', 42000],
+      ['EMP003', 'Anjali Nair', 'Human Resources', 'HR Executive', 28000],
+      ['EMP004', 'Karthik Reddy', 'Sales', 'Sales Manager', 55000],
+      ['EMP005', 'Sneha Iyer', 'Finance', 'Accountant', 32000],
+      ['EMP006', 'Arjun Patel', 'Engineering', 'QA Engineer', 36000],
+      ['EMP007', 'Divya Menon', 'Marketing', 'Marketing Lead', 48000],
+      ['EMP008', 'Vikram Singh', 'Operations', 'Site Supervisor', 26000],
+      ['EMP009', 'Meera Pillai', 'Sales', 'Sales Executive', 24000],
+      ['EMP010', 'Rohan Gupta', 'Finance', 'Financial Analyst', 39000],
+      ['EMP011', 'Kavya Rao', 'Marketing', 'Content Strategist', 30000],
+      ['EMP012', 'Suresh Kumar', 'Operations', 'Logistics Coordinator', 22000],
+    ];
+    const users = [{ id: 'admin', role: 'admin', name: 'Admin', email: 'admin@company.com', password: 'Admin@123', pin: '1234', employeeId: 'ADM001', department: 'Administration', designation: 'HR & Admin Manager', salary: 45000, joinDate: '2021-04-01', phone: '9876500000', status: 'active' }];
+    people.forEach(([employeeId, name, department, designation, salary], i) => users.push({
+      id: `u${i + 1}`, role: 'employee', employeeId, name, department, designation, salary,
+      email: `${name.split(' ')[0].toLowerCase()}@company.com`, password: 'Employee@123', pin: '1234',
+      phone: `98${ri(10000000, 99999999)}`, joinDate: `20${ri(21, 25)}-${pad(ri(1, 12))}-${pad(ri(1, 28))}`,
+      status: i === 11 ? 'inactive' : 'active',
+    }));
+
+    const att = {};
+    const t = today();
+    for (let i = 365; i >= 1; i -= 1) {
+      const d = addDays(t, -i);
+      if (isOff(d)) continue;
+      users.forEach((u) => {
+        if (u.joinDate > d) return;
+        const x = r();
+        const k = `${u.id}|${d}`;
+        if (x < 0.035) { att[k] = { status: 'Absent', source: 'system', remarks: '' }; return; }
+        if (x < 0.065) { att[k] = { status: 'Leave', source: 'leave', remarks: r() < 0.3 ? 'Sick leave' : 'Casual leave' }; return; }
+        const ses = [{ shift: 'morning', in: minToHH(ri(535, 562)), out: '13:00', auto: true }];
+        if (x >= 0.13) {
+          const s = { shift: 'afternoon', in: minToHH(ri(895, 911)), out: '19:00', auto: true };
+          if (x > 0.93) Object.assign(s, { out: minToHH(ri(1170, 1235)), auto: false, manual: true, reason: OT_REASONS[0] });
+          ses.push(s);
+        }
+        const rec = { sessions: ses, source: 'self', remarks: '' };
+        syncRec(rec, d);
+        att[k] = rec;
+      });
+    }
+    // Today: a few people are already at work (only up to the current time)
+    if (!isOff(t)) {
+      const nm = Math.floor(nowMinF());
+      users.filter((u) => u.role === 'employee' && u.status === 'active' && u.id !== 'u1').slice(0, 7).forEach((u) => {
+        if (nm < 536) return;
+        const ses = [{ shift: 'morning', in: minToHH(ri(535, Math.min(562, nm))), out: null }];
+        if (nm >= 896) ses.push({ shift: 'afternoon', in: minToHH(ri(895, Math.min(911, nm))), out: null });
+        const rec = { sessions: ses, source: 'self', remarks: '' };
+        syncRec(rec, t);
+        att[`${u.id}|${t}`] = rec;
+      });
+    }
+
+    const lv = (empId, type, f, to, reason, status, comment = '') => ({
+      id: uid(), empId, type, from: f, to, days: workingDays(f, to).length || 1, reason, status, comment,
+      createdAt: Date.now() - ri(1, 9) * 86400000, reviewedBy: status === 'Pending' ? '' : 'Admin',
+    });
+    const leaves = [
+      lv('u2', 'Sick', addDays(t, 2), addDays(t, 3), 'Medical appointment and recovery', 'Pending'),
+      lv('u5', 'Casual', addDays(t, 7), addDays(t, 7), 'Family function', 'Pending'),
+      lv('u7', 'Earned', addDays(t, 12), addDays(t, 16), 'Vacation with family', 'Pending'),
+      lv('u1', 'Casual', addDays(t, -20), addDays(t, -20), 'Personal work', 'Approved', 'Approved. Enjoy!'),
+      lv('u4', 'Other', addDays(t, -5), addDays(t, -4), 'Sister\'s wedding preparations', 'Rejected', 'Quarter-end sales review, please reschedule'),
+    ];
+    const docs = {};
+    const pool = { 'Signed Documents': ['Offer letter.pdf', 'Appointment letter.pdf', 'Employment contract.pdf', 'Code of conduct acknowledgement.pdf', 'Policy handbook sign-off.pdf'],
+      'ID & Address Proofs': ['Aadhaar card.pdf', 'PAN card.pdf', 'Address proof.pdf'], Certificates: ['Degree certificate.pdf', 'Experience letter.pdf', 'Safety training certificate.pdf'],
+      'Non-Disclosure Agreements': ['NDA.pdf', 'Client NDA.pdf'] };
+    users.forEach((u) => {
+      docs[u.id] = [];
+      Object.entries(pool).forEach(([folder, names]) => {
+        names.slice(0, ri(1, names.length)).forEach((name) => docs[u.id].push({ folder, name, date: u.joinDate || addDays(t, -300) }));
+      });
+    });
+    return { users, att, leaves, docs, session: null };
+  }
+
+  function loadDb() {
+    try { const raw = localStorage.getItem(KEY); if (raw) return JSON.parse(raw); } catch { /* storage unavailable */ }
+    return seed();
+  }
+  let db = loadDb();
+  // Admin-only access: force the admin credentials (also on data saved before this change) and drop any non-admin session
+  const ADMIN_EMAIL = 'admin@gmail.com', ADMIN_PASSWORD = 'admin@0000';
+  db.users.forEach((x) => { if (x.role === 'admin') { x.email = ADMIN_EMAIL; x.password = ADMIN_PASSWORD; } });
+  if (db.session && db.users.find((x) => x.id === db.session)?.role !== 'admin') db.session = null;
+  let simSnapshot = null; // data before the demo clock was turned on
+  const persist = () => { if (sim) return; try { localStorage.setItem(KEY, JSON.stringify(db)); } catch { /* in-memory only */ } };
+  function endSim() { if (!sim) return; sim = null; if (simSnapshot) { const s = db.session; db = JSON.parse(simSnapshot); db.session = s; } simSnapshot = null; }
+
+  const me = () => db.users.find((u) => u.id === db.session);
+  const emps = () => db.users.filter((u) => u.role === 'employee');
+  const activeEmps = () => emps().filter((u) => u.status === 'active');
+  const getAtt = (id, d) => db.att[`${id}|${d}`];
+  const byId = (id) => db.users.find((u) => u.id === id);
+  const departments = () => [...new Set(emps().map((e) => e.department).filter(Boolean))].sort();
+  const approvedLeaveOn = (id, d) => db.leaves.find((l) => l.empId === id && l.status === 'Approved' && l.from <= d && l.to >= d);
+
+  function syncToday() {
+    const t = today(); let changed = false;
+    Object.keys(db.att).forEach((k) => { if (k.endsWith(`|${t}`) && syncRec(db.att[k], t)) changed = true; });
+    if (changed) persist();
+    return changed;
+  }
+
+  /* ===================== UI bits ===================== */
+  function toast(msg, type = 'ok') {
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.textContent = msg;
+    const box = $('#toasts'); box.appendChild(el);
+    while (box.children.length > 3) box.firstChild.remove();
+    setTimeout(() => el.remove(), 3200);
+  }
+  const badge = (s) => (s ? `<span class="badge badge-${cls(s)}">${esc(s === 'Half-day' ? 'Half Day' : s)}</span>` : '<span class="badge badge-muted">Not marked</span>');
+  const avatar = (n, size = 34, extra = '') => `<span class="avatar ${extra}" style="width:${size}px;height:${size}px;font-size:${size * 0.4}px">${esc(initials(n))}</span>`;
+  const person = (n, sub) => `<div class="person">${avatar(n)}<div><div class="person-name">${esc(n)}</div>${sub ? `<div class="person-sub">${esc(sub)}</div>` : ''}</div></div>`;
+  const statCard = (i, label, value, sub, tone) => `<div class="stat-card"><div class="stat-icon tone-${tone}">${ic(i)}</div><div><div class="stat-label">${label}</div><div class="stat-value">${value}</div>${sub ? `<div class="stat-sub">${sub}</div>` : ''}</div></div>`;
+  const wsStat = (i, value, label, sub, tone) => `<div class="ws-stat"><div class="ws-stat-icon tone-${tone}">${ic(i)}</div><div><div class="ws-stat-value">${value}</div><div class="ws-stat-label">${label}</div>${sub ? `<div class="ws-stat-sub">${sub}</div>` : ''}</div></div>`;
+  const header = (title, sub, actions = '') => `<div class="page-header"><div><h1>${title}</h1>${sub ? `<p>${sub}</p>` : ''}</div>${actions ? `<div class="page-actions">${actions}</div>` : ''}</div>`;
+  const empty = (title, text = '') => `<div class="empty">${ic('inbox', 'icon')}<div class="empty-title">${title}</div>${text ? `<div class="empty-text">${text}</div>` : ''}</div>`;
+  const leaveBadge = (s) => `<span class="badge badge-${{ Pending: 'late', Approved: 'present', Rejected: 'absent', Cancelled: 'muted' }[s]}">${s}</span>`;
+
+  function openModal({ title, body, footer = '', width = 560 }) {
+    $('#modal-root').innerHTML = `<div class="modal-backdrop" data-act="modal-bg"><div class="modal" style="max-width:${width}px" role="dialog">
+      <div class="modal-head"><h3>${title}</h3><button class="icon-btn" data-act="modal-close" aria-label="Close">${ic('x')}</button></div>
+      <div class="modal-body">${body}</div>${footer ? `<div class="modal-foot">${footer}</div>` : ''}</div></div>`;
+    const first = $('#modal-root input, #modal-root select, #modal-root textarea');
+    if (first) first.focus();
+  }
+  const closeModal = () => { $('#modal-root').innerHTML = ''; };
+  const modalOpen = () => !!$('#modal-root').innerHTML;
+
+  /* ===================== Routing & shell ===================== */
+  const NAV = {
+    admin: [
+      ['My Workspace', [['workspace', 'My Workspace', 'badge']]],
+      ['Administration', [['dashboard', 'Dashboard', 'dashboard'], ['employees', 'Employees', 'users'], ['employee-dashboard', 'Employee Dashboard', 'idcard'], ['register', 'Attendance Register', 'clipboard'], ['team-timesheets', 'Team Timesheets', 'clock'], ['kiosk', 'Attendance Kiosk', 'tablet'], ['leaves', 'Leave Requests', 'calX'], ['reports', 'Reports', 'chart']]],
+      ['Account', [['profile', 'My Profile', 'user']]],
+    ],
+    employee: [
+      ['My Workspace', [['workspace', 'My Workspace', 'badge']]],
+      ['Account', [['profile', 'My Profile', 'user']]],
+    ],
+  };
+  const navFlat = (role) => NAV[role].flatMap(([sec, items]) => items.map((i) => [...i, sec]));
+  let charts = [];
+  let timer = null;
+  let shellRole = null;
+
+  function currentView() {
+    const items = navFlat(me().role);
+    const h = location.hash.slice(1);
+    return items.some((n) => n[0] === h && n[0] !== 'kiosk') ? h : items[me().role === 'admin' ? 1 : 0][0];
+  }
+
+  function renderShell(u) {
+    if (shellRole === u.id) return;
+    shellRole = u.id;
+    $('#app').innerHTML = `<div class="app-shell">
+      <aside class="sidebar" id="sidebar">
+        <div class="brand"><span class="brand-logo">${ic('calCheck')}</span><div><div class="brand-name">AttendPro</div><div class="brand-sub">Attendance Suite</div></div></div>
+        <nav class="nav">
+          ${NAV[u.role].map(([sec, items]) => `<div class="nav-section">${sec}</div>${items.map(([k, label, i]) => `<a href="#${k}" class="nav-link" data-nav="${k}">${ic(i)}<span>${label}</span></a>`).join('')}`).join('')}
+        </nav>
+        <div class="side-user">${avatar(u.name, 30, 'avatar-brand')}<div class="side-user-text"><div class="side-user-name">${esc(u.name)}</div><div class="side-user-role">${u.role === 'admin' ? 'Administrator' : 'Employee'}</div></div>
+          <button class="icon-btn side-logout" data-act="logout" title="Sign out">${ic('logout', 'icon icon-sm')}</button></div>
+      </aside>
+      <div class="sidebar-backdrop" id="sb-backdrop" data-act="close-menu" style="display:none"></div>
+      <div class="main">
+        <header class="topbar">
+          <button class="icon-btn mobile-only" data-act="open-menu" aria-label="Menu">${ic('menu')}</button>
+          <div class="crumbs" id="crumbs"></div>
+          <div class="topbar-right"><span class="topbar-date">${fmtDate(today(), { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span>${avatar(u.name, 34, 'avatar-brand')}</div>
+        </header>
+        <main class="content" id="content"></main>
+        <footer class="app-foot">© ${new Date().getFullYear()} ${SETTINGS.company}</footer>
+      </div></div>`;
+  }
+
+  function render() {
+    charts.forEach((c) => c.destroy()); charts = [];
+    clearInterval(timer);
+    closeModal();
+    if (location.hash === '#kiosk') { shellRole = null; renderKiosk(); return; }
+    const u = me();
+    if (!u) { shellRole = null; renderLogin(); return; }
+    syncToday();
+    renderShell(u);
+    const v = currentView();
+    const item = navFlat(u.role).find((n) => n[0] === v);
+    document.querySelectorAll('[data-nav]').forEach((a) => a.classList.toggle('active', a.dataset.nav === v));
+    $('#crumbs').innerHTML = `<strong class="crumb-brand">AttendPro</strong><span class="crumb-sep-bar"></span><span>${item[3]}</span>${ic('right', 'icon icon-xs')}<strong>${item[1]}</strong>`;
+    $('#sidebar').classList.remove('open'); $('#sb-backdrop').style.display = 'none';
+    VIEWS[v]($('#content'), u);
+    window.scrollTo(0, 0);
+  }
+  window.addEventListener('hashchange', render);
+
+  /* ===================== Login ===================== */
+  function renderLogin() {
+    $('#app').innerHTML = `<div class="login-page">
+      <section class="login-hero">
+        <div class="brand brand-light"><span class="brand-logo">${ic('calCheck')}</span><div><div class="brand-name">AttendPro</div><div class="brand-sub">Attendance Suite</div></div></div>
+        <div class="hero-copy"><h1>Workforce attendance, simplified.</h1>
+          <p>Shift-based check-in, automatic clock-out, leave approvals, timesheets and payroll-ready reports in one secure place.</p>
+          <ul class="hero-points"><li>${ic('clock')} Morning &amp; afternoon shifts with auto clock-out</li><li>${ic('ot')} Out-time &amp; overtime tracking</li><li>${ic('chart')} Daily, weekly &amp; monthly reports</li></ul></div>
+        <div class="hero-foot">© ${new Date().getFullYear()} ${SETTINGS.company}</div>
+      </section>
+      <section class="login-panel"><form class="login-card" data-form="login" novalidate>
+        <h2>Sign in</h2><p class="muted">Use your company email and password.</p>
+        <div id="login-err"></div>
+        <label class="field"><span>Email address</span><div class="input-icon">${ic('user', 'icon icon-sm')}<input name="email" type="email" placeholder="you@company.com" autocomplete="username"></div></label>
+        <label class="field"><span>Password</span><div class="input-icon">${ic('key', 'icon icon-sm')}<input name="password" type="password" placeholder="••••••••" autocomplete="current-password"></div></label>
+        <button class="btn btn-primary btn-block btn-lg">Sign in</button>
+        <button type="button" class="btn btn-kiosk btn-block" data-act="kiosk-open">${ic('tablet', 'icon icon-sm')} Open Attendance Kiosk</button>
+        <p class="center" style="margin-top:14px"><button type="button" class="reset-link" data-act="reset">Reset demo data</button></p>
+      </form></section></div>`;
+  }
+
+  /* ===================== My Workspace ===================== */
+  let wsTab = 'attendance';
+  let wsWeek = weekRange(today()).from;
+  let wsPayMonth = today().slice(0, 7);
+  let wsKey = '';
+
+  function dayPhase(u, rec) {
+    const t = today();
+    const all = rec?.sessions || [];
+    const ot = all.find((s) => !isReg(s) && !s.out) || null;
+    const hol = isHoliday(t);
+    if (hol) return { phase: 'holiday', note: hol, ot };
+    if (rec && rec.source === 'admin' && !rec.sessions) return { phase: 'admin' };
+    if (rec?.status === 'Leave' || approvedLeaveOn(u.id, t)) return { phase: 'leave', ot };
+    const nm = nowMinF();
+    const ses = all.filter(isReg);
+    const open = ses.find((s) => !s.out);
+    if (open) return { phase: 'open', shift: shiftOf(open.shift), session: open };
+    for (const sh of SHIFTS) {
+      if (!ses.some((s) => s.shift === sh.key) && nm >= toMin(sh.start) - OPEN_EARLY && nm < toMin(sh.end)) return { phase: 'clockable', shift: sh, ot };
+    }
+    const next = SHIFTS.find((sh) => nm < toMin(sh.start) - OPEN_EARLY);
+    if (next) return { phase: ses.length ? 'break' : 'before', shift: next, weeklyOff: isWeeklyOff(t), ot };
+    return { phase: 'done', weeklyOff: isWeeklyOff(t), ot };
+  }
+  const lastSession = (rec) => [...(rec?.sessions || [])].filter(isReg).sort((a, b) => toMin(b.in) - toMin(a.in))[0];
+  const workedSecToday = (rec) => (rec?.sessions || []).reduce((a, s) => a + sessionMins(s) * 60, 0);
+
+  function payslip(u, ym) {
+    const { from, to } = monthRange(ym);
+    const wd = workingDays(from, to).length;
+    const gross = u.salary || 0;
+    const c = { present: 0, late: 0, half: 0, absent: 0, leave: 0, unpaid: 0, ot: 0 };
+    eachDay(from, to).forEach((d) => {
+      const r = getAtt(u.id, d); if (!r) return;
+      if (r.status === 'Absent') c.absent += 1;
+      else if (r.status === 'Half-day') c.half += 1;
+      else if (r.status === 'Leave') { c.leave += 1; const l = approvedLeaveOn(u.id, d); if (l?.type === 'Unpaid') c.unpaid += 1; }
+      else if (r.status === 'Late') c.late += 1;
+      else c.present += 1;
+      c.ot += r.otMinutes || 0;
+    });
+    const lop = c.absent + c.unpaid + c.half * 0.5;
+    const perDay = wd ? gross / wd : 0;
+    const lopAmt = Math.round(lop * perDay);
+    const parts = [['Basic Salary', 0.5], ['House Rent Allowance', 0.2], ['Conveyance Allowance', 0.1]].map(([n, p]) => [n, Math.round(gross * p)]);
+    parts.push(['Special Allowance', gross - parts.reduce((a, p) => a + p[1], 0)]);
+    const pt = gross >= 15000 ? 200 : 0;
+    const deductions = [['Loss of Pay', lopAmt], ['Professional Tax', pt]];
+    const totalDed = lopAmt + pt;
+    return { ym, wd, gross, c, lop, paidDays: wd - lop, perDay, earnings: parts, deductions, totalDed, net: gross - totalDed };
+  }
+
+  function viewWorkspace(c, u) {
+    const t = today();
+    const ym = t.slice(0, 7);
+    const { from } = monthRange(ym);
+    let worked = 0; let halfs = 0; let leaveTaken = 0;
+    eachDay(from, t).forEach((d) => {
+      const r = getAtt(u.id, d); if (!r) return;
+      if (['Present', 'Late', 'Half-day'].includes(r.status)) worked += 1;
+      if (r.status === 'Half-day') halfs += 1;
+      if (r.status === 'Leave') leaveTaken += 1;
+    });
+    const pendingDays = db.leaves.filter((l) => l.empId === u.id && l.status === 'Pending').reduce((a, l) => a + l.days, 0);
+    const pay = payslip(u, ym);
+    const tabs = [['attendance', 'My Attendance', 'calCheck'], ['timesheet', 'My Timesheet', 'clipboard'], ['leave', 'My Leave', 'calendar'], ['salary', 'My Salary Slip', 'rupee']];
+
+    c.innerHTML = `<div class="ws">
+      ${header('My Workspace', `${esc(u.name)} · ${esc(u.designation || (u.role === 'admin' ? 'Admin' : 'Employee'))} · ${esc(u.employeeId || '')}`)}
+      <div class="ws-stats">
+        ${wsStat('calCheck', worked, 'Days worked this month', halfs ? `includes ${halfs} half day${halfs > 1 ? 's' : ''}` : 'no half days', 'green')}
+        ${wsStat('calendar', leaveTaken, 'Leave taken', 'this month', 'amber')}
+        ${wsStat('clock', pendingDays, 'Leave pending', 'awaiting HR', 'red')}
+        ${wsStat('rupee', money(pay.net), 'Net monthly pay', pay.lop ? `after ${pay.lop} LOP day(s)` : '', 'violet')}
+      </div>
+      <div class="ws-tabs">${tabs.map(([k, l, i]) => `<button class="ws-tab ${wsTab === k ? 'active' : ''}" data-act="ws-tab" data-k="${k}">${ic(i, 'icon icon-sm')} ${l}</button>`).join('')}</div>
+      <div id="ws-body"></div>
+    </div>`;
+    renderWsTab(u);
+  }
+
+  function renderWsTab(u) {
+    clearInterval(timer);
+    const el = $('#ws-body');
+    if (wsTab === 'attendance') { el.innerHTML = attendanceTab(u); startTick(u); }
+    if (wsTab === 'timesheet') el.innerHTML = timesheetTab(u);
+    if (wsTab === 'leave') el.innerHTML = leaveTab(u);
+    if (wsTab === 'salary') el.innerHTML = salaryTab(u);
+  }
+
+  function shiftChip(sh, rec, ph) {
+    const s = (rec?.sessions || []).find((x) => x.shift === sh.key);
+    const nm = nowMinF();
+    let state;
+    if (s && !s.out) state = `${s.in} – now`;
+    else if (s) state = `${s.in} – ${s.out}${s.manual ? ' (OT entry)' : ''}`;
+    else if (ph.phase === 'holiday' || ph.phase === 'leave' || ph.phase === 'admin') state = '—';
+    else if (nm >= toMin(sh.end)) state = 'missed';
+    else state = 'not started';
+    const tone = s && !s.out ? 'chip-live' : s ? 'chip-done' : state === 'missed' ? 'chip-missed' : 'chip-idle';
+    return `<span class="s-chip ${tone}">${sh.label} ${sh.start}–${sh.end} · ${state}</span>`;
+  }
+
+  function attendanceTab(u) {
+    const t = today();
+    const rec = getAtt(u.id, t);
+    const ph = dayPhase(u, rec);
+    wsKey = phaseKey(u);
+    const nm = nowMinF();
+    const last = lastSession(rec);
+    const otRun = ph.ot;
+    const otBtn = () => (otRun
+      ? `<button class="btn btn-ot running" data-act="ot-stop">${ic('ot', 'icon icon-sm')} Stop OT <span class="mono" id="ws-ot">${hms(sessionMins(otRun) * 60)}</span></button>`
+      : `<button class="btn btn-ot" data-act="ot-open">${ic('ot', 'icon icon-sm')} OT</button>`);
+    const otLine = otRun ? `<div class="shift-line ot-line">${ic('ot', 'icon icon-sm')} Overtime running since ${otRun.in}</div>` : '';
+    let title; let lines = ''; let actions = '';
+    const workedLine = `<div class="shift-sub muted">Worked today: <span class="mono" id="ws-worked">${hms(workedSecToday(rec))}</span>${rec?.otMinutes ? ` · <span class="ot-tag">+${hm(rec.otMinutes)} OT</span>` : ''}</div>`;
+
+    switch (ph.phase) {
+      case 'open':
+        title = `On the ${ph.shift.label.toLowerCase()} shift`;
+        lines = `<div class="shift-line">Clocked in at ${ph.session.in} · auto clock out at ${ph.shift.end}</div>
+          <div class="shift-line">${ic('timer', 'icon icon-sm tone-text-green')} Time left in shift <span class="mono strong" id="ws-left">${hms(toMin(ph.shift.end) * 60 - nowSec())}</span></div>${workedLine}`;
+        actions = `${otBtn()}<button class="btn btn-outline" data-act="clock-out">${ic('logout', 'icon icon-sm')} Clock Out</button>`;
+        break;
+      case 'clockable': {
+        const late = nm > toMin(ph.shift.start) + GRACE;
+        title = `${ph.shift.label} shift is open`;
+        lines = `<div class="shift-line">Shift ${ph.shift.start}–${ph.shift.end}${late ? ' · <span class="tone-text-red">you will be marked late</span>' : ''}</div>
+          <div class="shift-line">${ic('timer', 'icon icon-sm tone-text-green')} Time left in shift <span class="mono strong" id="ws-left">${hms(toMin(ph.shift.end) * 60 - nowSec())}</span></div>${workedLine}`;
+        actions = `${otBtn()}<button class="btn btn-primary" data-act="clock-in">${ic('login', 'icon icon-sm')} Clock In</button>`;
+        break;
+      }
+      case 'before':
+      case 'break':
+        title = ph.phase === 'break' ? 'On break' : `${ph.weeklyOff ? 'Weekly off · ' : ''}Shift starts at ${ph.shift.start}`;
+        lines = `<div class="shift-line">${ph.shift.label} shift ${ph.shift.start}–${ph.shift.end} · clock in opens at ${minToHH(toMin(ph.shift.start) - OPEN_EARLY)}</div>
+          <div class="shift-line">${ic('hourglass', 'icon icon-sm')} Clock in opens in <span class="mono strong" id="ws-left">${hms((toMin(ph.shift.start) - OPEN_EARLY) * 60 - nowSec())}</span></div>${workedLine}`;
+        actions = otBtn();
+        break;
+      case 'done':
+        title = last ? 'Day complete' : ph.weeklyOff ? 'Weekly off' : 'No shifts worked today';
+        lines = `<div class="shift-line">All shifts for today have ended. Working extra? Press <strong>OT</strong> to start overtime or enter your actual out time.</div>${workedLine}`;
+        actions = otBtn();
+        break;
+      case 'holiday': title = `Holiday · ${esc(ph.note)}`; lines = `<div class="shift-line">Enjoy your day off! Working today? Press OT to log overtime.</div>${workedLine}`; actions = otBtn(); break;
+      case 'leave': title = 'On leave today'; lines = `<div class="shift-line">Your approved leave covers today.</div>${workedLine}`; actions = otBtn(); break;
+      case 'admin': title = `Marked ${rec.status} by admin`; lines = `<div class="shift-line">${rec.checkIn ? `In ${rec.checkIn} · Out ${rec.checkOut || '—'}` : 'Your attendance for today was recorded by HR.'}</div>`; break;
+      default: title = '';
+    }
+    lines += otLine;
+
+    // This month table (records + holidays)
+    const ym = t.slice(0, 7);
+    const { from, to } = monthRange(ym);
+    const rows = eachDay(from, to).reverse().map((d) => {
+      const r = getAtt(u.id, d);
+      if (isHoliday(d)) return `<tr><td>${d}</td><td><span class="badge badge-holiday">Holiday</span><div class="cell-note">${esc(isHoliday(d))}</div></td><td>—</td><td>—</td><td class="num">0</td></tr>`;
+      if (!r) return '';
+      const manual = r.sessions?.some((s) => s.manual);
+      const note = r.autoHalf && r.status === 'Half-day' ? 'Set automatically' : r.source === 'admin' ? 'Marked by admin' : manual ? 'Out time entered' : '';
+      return `<tr><td>${d}</td><td>${badge(r.status)}${note ? `<div class="cell-note">${note}</div>` : ''}</td><td>${r.checkIn || '—'}</td><td>${r.checkOut || '—'}</td>
+        <td class="num">${hrs(r.workMinutes)}${r.otMinutes ? ` <span class="ot-tag">+${hrs(r.otMinutes)} OT</span>` : ''}</td></tr>`;
+    }).join('');
+
+    return `<div class="card shift-card">
+        <div class="shift-top"><div><h3 class="shift-title">${title}</h3>${lines}</div><div class="shift-actions">${actions}</div></div>
+        <div class="shift-bottom"><div class="muted small">${fmtDate(t, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</div>
+          <div class="s-chips"><span class="s-chip chip-expected">Expected today: ${isOff(t) ? 0 : EXPECTED_MIN / 60} h</span>${SHIFTS.map((sh) => shiftChip(sh, rec, ph)).join('')}${rec?.status ? `<span class="s-chip chip-idle">Status: ${rec.status === 'Half-day' ? 'Half Day' : rec.status}</span>` : ''}</div>
+        </div>
+      </div>
+      <div class="card flush"><div class="card-head padded"><h3>This month</h3><span class="muted small">${monthLabel(ym)}</span></div>
+        ${rows ? `<div class="table-wrap"><table class="table ws-table"><thead><tr><th>Date</th><th>Status</th><th>In</th><th>Out</th><th class="num">Hours</th></tr></thead><tbody>${rows}</tbody></table></div>` : empty('No attendance yet this month')}
+      </div>
+      <div class="demo-clock"><span>${ic('clock', 'icon icon-sm')} <strong>Demo clock</strong>: try shifts, auto clock-out and OT without waiting${sim ? ' · <em>changes made now are temporary</em>' : ''}</span>
+        <select id="sim-time"><option value="">Real time</option>${['08:40', '09:05', '09:25', '12:58', '13:30', '14:45', '15:20', '18:59', '19:40'].map((x) => `<option value="${x}" ${sim && sim.label === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>`;
+  }
+
+  function phaseKey(u) {
+    const rec = getAtt(u.id, today());
+    const ph = dayPhase(u, rec);
+    return `${ph.phase}|${ph.shift?.key || ''}|${rec?.status || ''}|${(rec?.sessions || []).map((s) => s.in + s.out).join(',')}`;
+  }
+
+  function startTick(u) {
+    clearInterval(timer);
+    timer = setInterval(() => {
+      if (!$('#ws-body')) return clearInterval(timer);
+      const changed = syncToday();
+      if ((changed || phaseKey(u) !== wsKey) && !modalOpen()) {
+        const before = getAtt(u.id, today())?.sessions?.find((s) => s.auto && s.out === nowHH());
+        viewWorkspace($('#content'), u);
+        if (before) toast(`Auto clocked out at ${before.out} (end of ${before.shift} shift)`);
+        return;
+      }
+      const rec = getAtt(u.id, today());
+      const ph = dayPhase(u, rec);
+      const left = $('#ws-left');
+      if (left) {
+        const target = ph.phase === 'open' || ph.phase === 'clockable' ? toMin(ph.shift.end) * 60 : ph.shift ? (toMin(ph.shift.start) - OPEN_EARLY) * 60 : 0;
+        left.textContent = hms(target - nowSec());
+      }
+      const w = $('#ws-worked'); if (w) w.textContent = hms(workedSecToday(rec));
+      const otEl = $('#ws-ot'); const otS = rec?.sessions?.find((s) => !isReg(s) && !s.out); if (otEl && otS) otEl.textContent = hms(sessionMins(otS) * 60);
+    }, 1000);
+  }
+
+  function timesheetTab(u) {
+    const { from, to } = { from: wsWeek, to: addDays(wsWeek, 6) };
+    let tot = 0; let exp = 0; let otT = 0;
+    const cell = (r, sh) => {
+      const s = r?.sessions?.find((x) => x.shift === sh.key);
+      if (s) return `${s.in} – ${s.out || '<span class="live">now</span>'}${s.manual ? ' <span class="ot-tag">OT</span>' : ''}`;
+      if (r?.source === 'admin' && sh.key === 'morning' && r.checkIn) return `${r.checkIn} – ${r.checkOut || '—'}`;
+      return '<span class="muted">—</span>';
+    };
+    const rows = eachDay(from, to).map((d) => {
+      const r = getAtt(u.id, d);
+      const e = isOff(d) || r?.status === 'Leave' ? 0 : EXPECTED_MIN;
+      const live = d === today() && r?.sessions ? Math.round(workedSecToday(r) / 60) : r?.workMinutes || 0;
+      if (d <= today()) { tot += live; exp += e; otT += r?.otMinutes || 0; }
+      const diff = d <= today() ? live - e : null;
+      const st = isHoliday(d) ? '<span class="badge badge-holiday">Holiday</span>' : isWeeklyOff(d) ? '<span class="badge badge-muted">Weekly off</span>' : r ? badge(r.status) : d > today() ? '<span class="muted small">Upcoming</span>' : badge('');
+      return `<tr class="${d === today() ? 'row-today' : ''}"><td class="nowrap"><strong>${weekday(d)}</strong> <span class="muted small">${fmtDate(d, { day: '2-digit', month: 'short' })}</span></td>
+        <td>${cell(r, SHIFTS[0])}</td><td>${cell(r, SHIFTS[1])}</td><td>${st}</td>
+        <td class="num">${live ? hm(live) : '—'}</td><td class="num">${r?.otMinutes ? hm(r.otMinutes) : '—'}</td><td class="num">${e ? '8h' : '—'}</td>
+        <td class="num ${diff == null || !e ? '' : diff >= 0 ? 'tone-text-green' : 'tone-text-red'}">${diff == null || (!e && !live) ? '—' : `${diff >= 0 ? '+' : '−'}${hm(Math.abs(diff)) === '—' ? '0h 00m' : hm(Math.abs(diff))}`}</td></tr>`;
+    }).join('');
+    return `<div class="card flush"><div class="card-head padded"><h3>Weekly timesheet</h3>
+        <div class="date-nav"><button class="icon-btn" data-act="ws-week" data-n="-7">${ic('left')}</button><span class="week-label">${fmtDate(from, { day: '2-digit', month: 'short' })} – ${fmtDate(to, { day: '2-digit', month: 'short', year: 'numeric' })}</span><button class="icon-btn" data-act="ws-week" data-n="7" ${to >= today() ? 'disabled' : ''}>${ic('right')}</button></div></div>
+      <div class="table-wrap"><table class="table ws-table"><thead><tr><th>Day</th><th>Morning 09:00–13:00</th><th>Afternoon 15:00–19:00</th><th>Status</th><th class="num">Worked</th><th class="num">OT</th><th class="num">Expected</th><th class="num">Variance</th></tr></thead>
+      <tbody>${rows}</tbody><tfoot><tr><td colspan="4"><strong>Week total</strong></td><td class="num"><strong>${hm(tot)}</strong></td><td class="num"><strong>${hm(otT)}</strong></td><td class="num"><strong>${hm(exp)}</strong></td>
+      <td class="num ${tot - exp >= 0 ? 'tone-text-green' : 'tone-text-red'}"><strong>${tot - exp >= 0 ? '+' : '−'}${hm(Math.abs(tot - exp)) === '—' ? '0h 00m' : hm(Math.abs(tot - exp))}</strong></td></tr></tfoot></table></div></div>`;
+  }
+
+  function leaveTab(u) {
+    const items = db.leaves.filter((l) => l.empId === u.id).sort((a, b) => b.createdAt - a.createdAt);
+    const approved = items.filter((l) => l.status === 'Approved').reduce((s, l) => s + l.days, 0);
+    const pending = items.filter((l) => l.status === 'Pending').length;
+    return `<div class="card flush"><div class="card-head padded"><div><h3>My leave requests</h3><span class="muted small">${approved} approved day(s) · ${pending} pending request(s)</span></div>
+      <button class="btn btn-primary" data-act="leave-new">${ic('plus', 'icon icon-sm')} Apply for Leave</button></div>
+      ${items.length ? `<div class="table-wrap"><table class="table ws-table"><thead><tr><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Reason</th><th>Status</th><th>HR comment</th><th></th></tr></thead><tbody>
+        ${items.map((l) => `<tr><td>${l.type}</td><td>${fmtDate(l.from)}</td><td>${fmtDate(l.to)}</td><td>${l.days}</td><td class="wrap">${esc(l.reason)}</td><td>${leaveBadge(l.status)}</td><td class="muted">${esc(l.comment || '—')}</td>
+          <td class="right">${l.status === 'Pending' ? `<button class="btn btn-ghost btn-sm" data-act="leave-cancel" data-id="${l.id}">${ic('ban', 'icon icon-sm')} Cancel</button>` : ''}</td></tr>`).join('')}
+      </tbody></table></div>` : empty('No leave requests yet', 'Use “Apply for Leave” to submit your first request.')}</div>`;
+  }
+
+  function salaryTab(u) {
+    const months = Array.from({ length: 6 }, (_, i) => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; });
+    const p = payslip(u, wsPayMonth);
+    const cur = wsPayMonth === today().slice(0, 7);
+    const row = (a, b) => `<tr><td>${a}</td><td class="num">${b}</td></tr>`;
+    return `<div class="card">
+      <div class="card-head"><div><h3>Salary slip · ${monthLabel(wsPayMonth)}</h3>${cur ? '<span class="muted small">Month in progress: figures update as attendance is recorded</span>' : ''}</div>
+        <div class="page-actions"><select id="pay-month">${months.map((m) => `<option value="${m}" ${m === wsPayMonth ? 'selected' : ''}>${monthLabel(m)}</option>`).join('')}</select>
+        <button class="btn btn-outline" data-act="payslip-pdf">${ic('file', 'icon icon-sm')} Download PDF</button></div></div>
+      <div class="slip-meta">
+        <div><span>Employee</span><strong>${esc(u.name)}</strong></div><div><span>Employee ID</span><strong>${esc(u.employeeId || '—')}</strong></div>
+        <div><span>Designation</span><strong>${esc(u.designation || '—')}</strong></div><div><span>Department</span><strong>${esc(u.department || '—')}</strong></div>
+        <div><span>Working days</span><strong>${p.wd}</strong></div><div><span>Paid days</span><strong>${p.paidDays}</strong></div>
+        <div><span>LOP days</span><strong>${p.lop}</strong></div><div><span>Overtime logged</span><strong>${hm(p.c.ot)}</strong></div>
+      </div>
+      <div class="grid-2 slip-grid">
+        <table class="table slip"><thead><tr><th>Earnings</th><th class="num">Amount</th></tr></thead><tbody>${p.earnings.map(([n, v]) => row(n, money(v))).join('')}</tbody>
+          <tfoot><tr><td><strong>Gross earnings</strong></td><td class="num"><strong>${money(p.gross)}</strong></td></tr></tfoot></table>
+        <table class="table slip"><thead><tr><th>Deductions</th><th class="num">Amount</th></tr></thead><tbody>${p.deductions.map(([n, v]) => row(n, money(v))).join('')}</tbody>
+          <tfoot><tr><td><strong>Total deductions</strong></td><td class="num"><strong>${money(p.totalDed)}</strong></td></tr></tfoot></table>
+      </div>
+      <div class="net-pay"><span>Net pay</span><strong>${money(p.net)}</strong></div>
+      <p class="muted small" style="margin:10px 0 0">LOP = absent days + unpaid leave + ½ per half day. Per-day rate ${money(p.perDay)} (${money(p.gross)} ÷ ${p.wd} working days). Overtime is shown for reference; add an OT pay rule if your company pays overtime.</p>
+    </div>`;
+  }
+
+  /* ===================== Admin: dashboard ===================== */
+  function viewDashboard(c, u) {
+    const t = today();
+    const list = activeEmps();
+    const cnt = { Present: 0, Late: 0, 'Half-day': 0, Absent: 0, Leave: 0 };
+    const recs = [];
+    list.forEach((e) => { const r = getAtt(e.id, t); if (r) { cnt[r.status] += 1; recs.push({ e, r }); } });
+    const notMarked = list.length - recs.length;
+    const attended = cnt.Present + cnt.Late + cnt['Half-day'];
+    const rate = list.length ? Math.round((attended / list.length) * 1000) / 10 : 0;
+    const pending = db.leaves.filter((l) => l.status === 'Pending');
+    const working = recs.filter((x) => x.r.sessions?.some((s) => !s.out)).length;
+
+    const trend = eachDay(addDays(t, -6), t).map((d) => {
+      const o = { label: fmtDate(d, { weekday: 'short', day: '2-digit' }) };
+      STATUSES.forEach((s) => { o[s] = 0; });
+      list.forEach((e) => { const r = getAtt(e.id, d); if (r) o[r.status] += 1; });
+      return o;
+    });
+    const deptMap = new Map();
+    list.forEach((e) => {
+      const d = e.department || 'Unassigned';
+      if (!deptMap.has(d)) deptMap.set(d, { d, total: 0, present: 0, absent: 0, leave: 0 });
+      const row = deptMap.get(d); row.total += 1;
+      const r = getAtt(e.id, t);
+      if (r && ['Present', 'Late', 'Half-day'].includes(r.status)) row.present += 1;
+      else if (r?.status === 'Absent') row.absent += 1;
+      else if (r?.status === 'Leave') row.leave += 1;
+    });
+    const recent = recs.filter((x) => x.r.checkIn).sort((a, b) => b.r.checkIn.localeCompare(a.r.checkIn)).slice(0, 8);
+    const h = new Date().getHours();
+    const greet = h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
+
+    c.innerHTML = `${header(`Good ${greet}, ${esc(u.name.split(' ')[0])}`, `Attendance overview for ${fmtDate(t, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`,
+      `<button class="btn btn-ghost" data-act="rerender">${ic('refresh', 'icon icon-sm')} Refresh</button><a href="#register" class="btn btn-primary">Open Register</a>`)}
+      ${isHoliday(t) ? `<div class="alert alert-info">Today is a holiday: ${esc(isHoliday(t))}</div>` : ''}
+      <div class="stats-grid">
+        ${statCard('users', 'Active Employees', list.length, `${working} working right now`, 'slate')}
+        ${statCard('userCheck', 'Present', cnt.Present, 'On time today', 'green')}
+        ${statCard('clock', 'Late / Half-day', `${cnt.Late} / ${cnt['Half-day']}`, '', 'amber')}
+        ${statCard('userX', 'Absent', cnt.Absent, '', 'red')}
+        ${statCard('calendar', 'On Leave', cnt.Leave, '', 'sky')}
+        ${statCard('alert', 'Not Marked', notMarked, '', 'slate')}
+        ${statCard('percent', 'Attendance Rate', `${rate}%`, '', 'indigo')}
+        ${statCard('calX', 'Pending Leaves', pending.length, '<a href="#leaves">Review requests →</a>', 'violet')}
+      </div>
+      <div class="grid-2-1">
+        <div class="card"><div class="card-head"><h3>Last 7 days</h3><span class="muted small">Attendance by status</span></div><div class="chart-box"><canvas id="ch-trend"></canvas></div></div>
+        <div class="card"><div class="card-head"><h3>Today’s status</h3></div><div class="chart-box"><canvas id="ch-pie"></canvas></div></div>
+      </div>
+      <div class="grid-2">
+        <div class="card"><div class="card-head"><h3>Recent check-ins</h3><a href="#team-timesheets" class="link small">Team timesheets →</a></div>
+          ${recent.length ? `<table class="table"><thead><tr><th>Employee</th><th>In</th><th>Out</th><th>Status</th></tr></thead><tbody>
+          ${recent.map(({ e, r }) => `<tr><td>${person(e.name, e.department)}</td><td>${r.checkIn}</td><td>${r.checkOut || (r.sessions?.some((s) => !s.out) ? '<span class="live">working</span>' : '—')}</td><td>${badge(r.status)}</td></tr>`).join('')}</tbody></table>` : empty('No check-ins yet today')}
+        </div>
+        <div class="card"><div class="card-head"><h3>Departments today</h3></div><div class="dept-list">
+          ${[...deptMap.values()].sort((a, b) => b.total - a.total).map((d) => `<div class="dept-row"><div class="dept-top"><span class="dept-name">${esc(d.d)}</span><span class="muted small">${d.present}/${d.total} present · ${d.leave} leave · ${d.absent} absent</span></div><div class="progress"><span style="width:${d.total ? Math.round((d.present / d.total) * 100) : 0}%"></span></div></div>`).join('')}
+        </div></div>
+      </div>
+      ${pending.length ? `<div class="card"><div class="card-head"><h3>Pending leave requests</h3><a href="#leaves" class="link small">Review all →</a></div>
+        <table class="table"><thead><tr><th>Employee</th><th>Type</th><th>Dates</th><th>Days</th></tr></thead><tbody>
+        ${pending.map((l) => { const e = byId(l.empId); return `<tr><td>${person(e?.name || 'Deleted', e?.employeeId)}</td><td>${l.type}</td><td>${fmtDate(l.from)} – ${fmtDate(l.to)}</td><td>${l.days}</td></tr>`; }).join('')}
+        </tbody></table></div>` : ''}`;
+
+    if (!window.Chart) return;
+    Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
+    charts.push(new Chart($('#ch-trend'), {
+      type: 'bar',
+      data: { labels: trend.map((x) => x.label), datasets: STATUSES.map((s) => ({ label: s, data: trend.map((x) => x[s]), backgroundColor: COLORS[s], borderRadius: 3, maxBarThickness: 30 })) },
+      options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, ticks: { precision: 0 }, grid: { color: '#eef2f7' } } } },
+    }));
+    const pie = [['Present', cnt.Present], ['Late', cnt.Late], ['Half-day', cnt['Half-day']], ['Absent', cnt.Absent], ['Leave', cnt.Leave], ['Not marked', notMarked]].filter((p) => p[1] > 0);
+    charts.push(new Chart($('#ch-pie'), {
+      type: 'doughnut',
+      data: { labels: pie.map((p) => p[0]), datasets: [{ data: pie.map((p) => p[1]), backgroundColor: pie.map((p) => COLORS[p[0]]), borderWidth: 2 }] },
+      options: { maintainAspectRatio: false, cutout: '62%', plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } } } },
+    }));
+  }
+
+  /* ===================== Admin: team timesheets ===================== */
+  let ttDate = today();
+  function viewTeam(c) {
+    const t = today();
+    const list = activeEmps().sort((a, b) => a.name.localeCompare(b.name));
+    const cell = (r, sh) => {
+      const s = r?.sessions?.find((x) => x.shift === sh.key);
+      if (s) return `${s.in} – ${s.out || '<span class="live">now</span>'}${s.manual ? ' <span class="ot-tag">OT</span>' : s.auto ? ' <span class="muted small">auto</span>' : ''}`;
+      if (r?.source === 'admin' && sh.key === 'morning' && r.checkIn) return `${r.checkIn} – ${r.checkOut || '—'}`;
+      return '<span class="muted">—</span>';
+    };
+    let tot = 0; let ot = 0;
+    const rows = list.map((e) => {
+      const r = getAtt(e.id, ttDate);
+      const live = ttDate === t && r?.sessions ? Math.round(workedSecToday(r) / 60) : r?.workMinutes || 0;
+      tot += live; ot += r?.otMinutes || 0;
+      return `<tr><td>${person(e.name, `${e.employeeId} · ${e.department}`)}</td><td>${cell(r, SHIFTS[0])}</td><td>${cell(r, SHIFTS[1])}</td><td class="num">${live ? hm(live) : '—'}</td><td class="num">${r?.otMinutes ? hm(r.otMinutes) : '—'}</td><td>${r?.sessions?.some((s) => !s.out) ? '<span class="badge badge-working">Working</span> ' : ''}${badge(r?.status)}</td></tr>`;
+    }).join('');
+    c.innerHTML = `${header('Team Timesheets', `${fmtDate(ttDate, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}${isHoliday(ttDate) ? ` · Holiday: ${esc(isHoliday(ttDate))}` : ''}`,
+      `<div class="date-nav"><button class="icon-btn" data-act="tt-shift" data-n="-1">${ic('left')}</button><input type="date" id="tt-date" value="${ttDate}" max="${t}"><button class="icon-btn" data-act="tt-shift" data-n="1" ${ttDate >= t ? 'disabled' : ''}>${ic('right')}</button></div>`)}
+      <div class="card flush"><div class="table-wrap"><table class="table ws-table"><thead><tr><th>Employee</th><th>Morning 09:00–13:00</th><th>Afternoon 15:00–19:00</th><th class="num">Worked</th><th class="num">OT</th><th>Status</th></tr></thead>
+      <tbody>${rows}</tbody><tfoot><tr><td colspan="3"><strong>Total</strong></td><td class="num"><strong>${hm(tot)}</strong></td><td class="num"><strong>${hm(ot)}</strong></td><td></td></tr></tfoot></table></div></div>`;
+  }
+
+  /* ===================== Admin: employees ===================== */
+  const empF = { q: '', dept: '', status: '' };
+  function viewEmployees(c) {
+    c.innerHTML = `${header('Employees', `${emps().length} employees in the directory`, `<button class="btn btn-primary" data-act="emp-new">${ic('plus', 'icon icon-sm')} Add Employee</button>`)}
+      <div class="card"><div class="toolbar">
+        <div class="input-icon grow">${ic('search', 'icon icon-sm')}<input data-empf="q" placeholder="Search by name, email, ID or designation…" value="${esc(empF.q)}"></div>
+        <select data-empf="dept"><option value="">All departments</option>${departments().map((d) => `<option ${empF.dept === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select>
+        <select data-empf="status"><option value="">All statuses</option><option value="active" ${empF.status === 'active' ? 'selected' : ''}>Active</option><option value="inactive" ${empF.status === 'inactive' ? 'selected' : ''}>Inactive</option></select>
+      </div><div id="emp-table"></div></div>`;
+    renderEmpTable();
+  }
+  function renderEmpTable() {
+    const q = empF.q.trim().toLowerCase();
+    const list = emps().filter((e) => (!empF.dept || e.department === empF.dept) && (!empF.status || e.status === empF.status)
+      && (!q || [e.name, e.email, e.employeeId, e.designation].some((v) => (v || '').toLowerCase().includes(q))))
+      .sort((a, b) => a.name.localeCompare(b.name));
+    $('#emp-table').innerHTML = list.length ? `<div class="table-wrap"><table class="table"><thead><tr><th>Employee</th><th>Emp ID</th><th>Department</th><th>Designation</th><th>Phone</th><th class="num">Monthly salary</th><th>Joined</th><th>Status</th><th class="right">Actions</th></tr></thead><tbody>
+      ${list.map((e) => `<tr><td><button class="link-btn" data-act="ed-open" data-id="${e.id}" title="Open employee dashboard">${person(e.name, e.email)}</button></td><td class="mono">${esc(e.employeeId)}</td><td>${esc(e.department || '—')}</td><td>${esc(e.designation || '—')}</td><td>${esc(e.phone || '—')}</td><td class="num">${e.salary ? money(e.salary) : '—'}</td><td>${fmtDate(e.joinDate)}</td>
+        <td><span class="badge ${e.status === 'active' ? 'badge-present' : 'badge-muted'}">${e.status === 'active' ? 'Active' : 'Inactive'}</span></td>
+        <td class="right nowrap"><button class="icon-btn" title="Edit" data-act="emp-edit" data-id="${e.id}">${ic('edit', 'icon icon-sm')}</button><button class="icon-btn danger" title="Delete" data-act="emp-del" data-id="${e.id}">${ic('trash', 'icon icon-sm')}</button></td></tr>`).join('')}
+      </tbody></table></div>` : empty('No employees found', 'Try a different search or add a new employee.');
+  }
+  function empForm(e) {
+    const v = (k) => esc(e?.[k] ?? '');
+    openModal({
+      title: e ? 'Edit Employee' : 'Add Employee', width: 680,
+      body: `<form data-form="employee" data-id="${e?.id || ''}"><div class="form-grid">
+        <label class="field"><span>Full name *</span><input name="name" value="${v('name')}" required></label>
+        <label class="field"><span>Employee ID *</span><input name="employeeId" value="${v('employeeId')}" placeholder="EMP013" required></label>
+        <label class="field"><span>Email *</span><input name="email" type="email" value="${v('email')}" required></label>
+        <label class="field"><span>Phone</span><input name="phone" value="${v('phone')}"></label>
+        <label class="field"><span>Department</span><input name="department" list="dept-list" value="${v('department')}"><datalist id="dept-list">${departments().map((d) => `<option value="${esc(d)}">`).join('')}</datalist></label>
+        <label class="field"><span>Designation</span><input name="designation" value="${v('designation')}"></label>
+        <label class="field"><span>Monthly salary (₹)</span><input name="salary" type="number" min="0" step="500" value="${v('salary')}"></label>
+        <label class="field"><span>Joining date</span><input name="joinDate" type="date" value="${v('joinDate')}"></label>
+        <label class="field"><span>Status</span><select name="status"><option value="active">Active</option><option value="inactive" ${e?.status === 'inactive' ? 'selected' : ''}>Inactive</option></select></label>
+        <label class="field"><span>Kiosk PIN (4 digits)</span><input name="pin" inputmode="numeric" maxlength="4" pattern="\\d{4}" value="${v('pin') || '1234'}"></label>
+        <label class="field"><span>${e ? 'Reset password (optional)' : 'Login password *'}</span><input name="password" type="password" minlength="8" placeholder="Minimum 8 characters" autocomplete="new-password"></label>
+      </div><div class="modal-foot inline"><button type="button" class="btn btn-ghost" data-act="modal-close">Cancel</button><button class="btn btn-primary">${e ? 'Save changes' : 'Add employee'}</button></div></form>`,
+    });
+  }
+
+  /* ===================== Admin: attendance register ===================== */
+  let regDate = today();
+  let regEdits = {};
+  let regDirty = new Set();
+  let regQ = '';
+  const regEmps = () => activeEmps().filter((e) => !e.joinDate || e.joinDate <= regDate).sort((a, b) => a.name.localeCompare(b.name));
+  function loadReg() {
+    regEdits = {}; regDirty = new Set();
+    regEmps().forEach((e) => {
+      const r = getAtt(e.id, regDate);
+      regEdits[e.id] = { status: r?.status || '', checkIn: r?.checkIn || '', checkOut: r?.checkOut || '', remarks: r?.remarks || '', live: !!r?.sessions?.some((s) => !s.out) };
+    });
+  }
+  function viewRegister(c) {
+    loadReg();
+    const t = today();
+    c.innerHTML = `${header('Daily Attendance Register', fmtDate(regDate, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
+      `<div class="date-nav"><button class="icon-btn" data-act="reg-shift" data-n="-1">${ic('left')}</button><input type="date" id="reg-date" value="${regDate}" max="${t}"><button class="icon-btn" data-act="reg-shift" data-n="1" ${regDate >= t ? 'disabled' : ''}>${ic('right')}</button></div>
+       <button class="btn btn-primary" id="reg-save" data-act="reg-save" disabled>${ic('save', 'icon icon-sm')} Save</button>`)}
+      ${isOff(regDate) ? `<div class="alert alert-info">This date is ${isHoliday(regDate) ? `a holiday: ${esc(isHoliday(regDate))}` : 'a weekly off day'}.</div>` : ''}
+      <div class="chips" id="reg-chips"></div>
+      <div class="card"><div class="toolbar">
+        <div class="input-icon grow">${ic('search', 'icon icon-sm')}<input id="reg-q" placeholder="Filter employees…" value="${esc(regQ)}"></div>
+        <button class="btn btn-ghost" data-act="reg-bulk" data-s="Present">${ic('userCheck', 'icon icon-sm')} Unmarked → Present</button>
+        <button class="btn btn-ghost" data-act="reg-bulk" data-s="Absent">${ic('userX', 'icon icon-sm')} Unmarked → Absent</button>
+      </div><div id="reg-table"></div>
+      <p class="muted small" style="margin:12px 0 0">Times come from employee clock-ins. Editing a row here replaces the employee's shift entries with your values.</p></div>`;
+    renderRegTable();
+  }
+  function renderRegChips() {
+    const cnt = { none: 0 }; STATUSES.forEach((s) => { cnt[s] = 0; });
+    Object.values(regEdits).forEach((e) => { cnt[e.status || 'none'] += 1; });
+    $('#reg-chips').innerHTML = STATUSES.map((s) => `<span class="chip">${badge(s)} <strong>${cnt[s]}</strong></span>`).join('') + `<span class="chip">${badge('')} <strong>${cnt.none}</strong></span>`;
+    const btn = $('#reg-save');
+    btn.disabled = !regDirty.size;
+    btn.innerHTML = `${ic('save', 'icon icon-sm')} Save${regDirty.size ? ` (${regDirty.size})` : ''}`;
+  }
+  function renderRegTable() {
+    const q = regQ.trim().toLowerCase();
+    const list = regEmps().filter((e) => !q || [e.name, e.employeeId, e.department].some((v) => (v || '').toLowerCase().includes(q)));
+    $('#reg-table').innerHTML = list.length ? `<div class="table-wrap"><table class="table register"><thead><tr><th>Employee</th><th>Status</th><th>Check in</th><th>Check out</th><th>Remarks</th></tr></thead><tbody>
+      ${list.map((e) => {
+        const x = regEdits[e.id];
+        const noT = !x.status || x.status === 'Absent' || x.status === 'Leave';
+        return `<tr class="${regDirty.has(e.id) ? 'row-dirty' : ''}" id="row-${e.id}"><td>${person(e.name, `${e.employeeId} · ${e.department}`)}${x.live && !regDirty.has(e.id) ? '<span class="badge badge-working" style="margin-top:4px">Working now</span>' : ''}</td>
+          <td><div class="status-picker">${STATUSES.map((s) => `<button type="button" class="pill pill-${cls(s)} ${x.status === s ? 'active' : ''}" data-act="reg-status" data-id="${e.id}" data-s="${s}">${s}</button>`).join('')}</div></td>
+          <td><input type="time" data-reg="checkIn" data-id="${e.id}" value="${x.checkIn}" ${noT ? 'disabled' : ''}></td>
+          <td><input type="time" data-reg="checkOut" data-id="${e.id}" value="${x.checkOut || ''}" ${noT ? 'disabled' : ''}></td>
+          <td><input class="remarks" data-reg="remarks" data-id="${e.id}" value="${esc(x.remarks)}" placeholder="Optional"></td></tr>`;
+      }).join('')}</tbody></table></div>` : empty('No active employees');
+    renderRegChips();
+  }
+  function regSet(id, patch) {
+    Object.assign(regEdits[id], patch);
+    if (patch.status === 'Absent' || patch.status === 'Leave') Object.assign(regEdits[id], { checkIn: '', checkOut: '' });
+    regDirty.add(id);
+  }
+
+  /* ===================== Admin: leaves ===================== */
+  let leaveTabSel = 'Pending';
+  function viewLeaves(c) {
+    const pendingN = db.leaves.filter((l) => l.status === 'Pending').length;
+    const items = db.leaves.filter((l) => leaveTabSel === 'All' || l.status === leaveTabSel).sort((a, b) => b.createdAt - a.createdAt);
+    c.innerHTML = `${header('Leave Requests', 'Review and approve employee leave applications')}
+      <div class="tabs">${['Pending', 'Approved', 'Rejected', 'All'].map((t) => `<button class="tab ${leaveTabSel === t ? 'active' : ''}" data-act="leave-tab" data-t="${t}">${t}${t === 'Pending' && pendingN ? `<span class="tab-count">${pendingN}</span>` : ''}</button>`).join('')}</div>
+      <div class="card">${items.length ? `<div class="table-wrap"><table class="table"><thead><tr><th>Employee</th><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Reason</th><th>Status</th><th class="right">Action</th></tr></thead><tbody>
+        ${items.map((l) => { const e = byId(l.empId); return `<tr><td>${person(e?.name || 'Deleted employee', [e?.employeeId, e?.department].filter(Boolean).join(' · '))}</td><td>${l.type}</td><td>${fmtDate(l.from)}</td><td>${fmtDate(l.to)}</td><td>${l.days}</td><td class="wrap">${esc(l.reason)}</td>
+          <td>${leaveBadge(l.status)}${l.reviewedBy ? `<div class="muted small">by ${esc(l.reviewedBy)}</div>` : ''}</td>
+          <td class="right nowrap">${l.status === 'Pending' ? `<button class="btn btn-success btn-sm" data-act="leave-review" data-id="${l.id}" data-s="Approved">${ic('check', 'icon icon-sm')} Approve</button> <button class="btn btn-danger-ghost btn-sm" data-act="leave-review" data-id="${l.id}" data-s="Rejected">${ic('x', 'icon icon-sm')} Reject</button>` : `<span class="muted small">${esc(l.comment || '—')}</span>`}</td></tr>`; }).join('')}
+        </tbody></table></div>` : empty(`No ${leaveTabSel === 'All' ? '' : leaveTabSel.toLowerCase()} requests`)}</div>`;
+  }
+
+  /* ===================== Admin: reports ===================== */
+  const rp = { type: 'daily', date: today(), month: today().slice(0, 7), from: `${today().slice(0, 7)}-01`, to: today(), dept: '', emp: '' };
+  let report = null;
+  let repView = 'details';
+
+  function buildReport(p) {
+    let from; let to; let label;
+    if (p.type === 'daily') { from = to = p.date; label = `Daily Attendance Report - ${from}`; }
+    else if (p.type === 'weekly') { ({ from, to } = weekRange(p.date)); label = `Weekly Attendance Report - ${from} to ${to}`; }
+    else if (p.type === 'monthly') { ({ from, to } = monthRange(p.month)); label = `Monthly Attendance Report - ${p.month}`; }
+    else {
+      from = p.from; to = p.to;
+      if (!from || !to || to < from) throw new Error('Please choose a valid date range');
+      if (eachDay(from, to).length > 366) throw new Error('Range cannot exceed one year');
+      label = `Attendance Report - ${from} to ${to}`;
+    }
+    let list = emps().filter((e) => !e.joinDate || e.joinDate <= to);
+    if (p.dept) list = list.filter((e) => e.department === p.dept);
+    if (p.emp) list = list.filter((e) => e.id === p.emp);
+    list.sort((a, b) => a.name.localeCompare(b.name));
+    const t = today();
+    const wd = workingDays(from, to < t ? to : t);
+    const wdSet = new Set(wd);
+    const details = [];
+    const summary = list.map((e) => {
+      const s = { Present: 0, Late: 0, 'Half-day': 0, Absent: 0, Leave: 0, wm: 0, ot: 0, rec: 0 };
+      eachDay(from, to).forEach((d) => {
+        const r = getAtt(e.id, d); if (!r) return;
+        s[r.status] += 1; s.wm += r.workMinutes || 0; s.ot += r.otMinutes || 0; if (wdSet.has(d)) s.rec += 1;
+        details.push({ date: d, employeeId: e.employeeId, name: e.name, department: e.department || '-', status: r.status, checkIn: r.checkIn || '-', checkOut: r.checkOut || '-', workHours: hrs(r.workMinutes), otHours: hrs(r.otMinutes), remarks: r.remarks || (r.autoHalf && r.status === 'Half-day' ? 'Set automatically' : '') });
+      });
+      const attended = s.Present + s.Late + 0.5 * s['Half-day'];
+      return { employeeId: e.employeeId, name: e.name, department: e.department || '-', present: s.Present, late: s.Late, halfDay: s['Half-day'], absent: s.Absent, leave: s.Leave,
+        notMarked: Math.max(0, wd.length - s.rec), workHours: hrs(s.wm), otHours: hrs(s.ot), attendancePct: wd.length ? Math.round((attended / wd.length) * 1000) / 10 : 0 };
+    });
+    details.sort((a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name));
+    const totals = { present: 0, late: 0, halfDay: 0, absent: 0, leave: 0, notMarked: 0, workHours: 0, otHours: 0 };
+    summary.forEach((s) => Object.keys(totals).forEach((k) => { totals[k] = Math.round((totals[k] + s[k]) * 10) / 10; }));
+    return { type: p.type, label, from, to, workingDays: wd.length, employees: list.length, summary, details, totals };
+  }
+
+  function viewReports(c) {
+    const t = today();
+    const dateField = (label, key, extra = '') => `<label class="field compact"><span>${label}</span><input type="date" data-rp="${key}" value="${rp[key]}" ${extra}></label>`;
+    let inputs = '';
+    if (rp.type === 'daily' || rp.type === 'weekly') inputs = dateField(rp.type === 'weekly' ? 'Any date in week' : 'Date', 'date', `max="${t}"`);
+    if (rp.type === 'monthly') inputs = `<label class="field compact"><span>Month</span><input type="month" data-rp="month" value="${rp.month}"></label>`;
+    if (rp.type === 'custom') inputs = dateField('From', 'from') + dateField('To', 'to');
+    const empOpts = emps().filter((e) => !rp.dept || e.department === rp.dept).sort((a, b) => a.name.localeCompare(b.name));
+    c.innerHTML = `${header('Attendance Reports', 'Generate daily, weekly and monthly reports and export them to Excel or PDF',
+      `<button class="btn btn-ghost" data-act="export" data-k="excel">${ic('sheet', 'icon icon-sm')} Export Excel</button><button class="btn btn-ghost" data-act="export" data-k="pdf">${ic('file', 'icon icon-sm')} Export PDF</button>`)}
+      <div class="card">
+        <div class="segmented">${[['daily', 'Daily'], ['weekly', 'Weekly'], ['monthly', 'Monthly'], ['custom', 'Custom range']].map(([k, l]) => `<button class="${rp.type === k ? 'active' : ''}" data-act="rp-type" data-k="${k}">${l}</button>`).join('')}</div>
+        <div class="toolbar wrap-row">${inputs}
+          <label class="field compact"><span>Department</span><select data-rp="dept"><option value="">All departments</option>${departments().map((d) => `<option ${rp.dept === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select></label>
+          <label class="field compact"><span>Employee</span><select data-rp="emp"><option value="">All employees</option>${empOpts.map((e) => `<option value="${e.id}" ${rp.emp === e.id ? 'selected' : ''}>${esc(e.name)} (${e.employeeId})</option>`).join('')}</select></label>
+          <button class="btn btn-primary align-end" data-act="rp-run">${ic('play', 'icon icon-sm')} Generate</button>
+        </div>
+      </div><div id="rep-out"></div>`;
+    renderReport();
+  }
+
+  function renderReport() {
+    try { report = buildReport(rp); } catch (e) { $('#rep-out').innerHTML = `<div class="alert alert-error">${esc(e.message)}</div>`; report = null; return; }
+    const r = report; const t = r.totals;
+    const kpi = (l, v, tone) => `<div class="kpi tone-${tone}"><strong>${v}</strong><span>${l}</span></div>`;
+    $('#rep-out').innerHTML = `<div class="report-banner"><div><h3>${esc(r.label)}</h3><span class="muted small">${fmtDate(r.from)} – ${fmtDate(r.to)} · ${r.workingDays} working day(s) elapsed · ${r.employees} employee(s)</span></div>
+      <div class="report-kpis">${kpi('Present', t.present, 'green')}${kpi('Late', t.late, 'amber')}${kpi('Half-day', t.halfDay, 'indigo')}${kpi('Absent', t.absent, 'red')}${kpi('Leave', t.leave, 'sky')}${kpi('OT hrs', t.otHours, 'violet')}</div></div>
+      <div class="tabs"><button class="tab ${repView === 'summary' ? 'active' : ''}" data-act="rep-view" data-v="summary">Employee summary</button><button class="tab ${repView === 'details' ? 'active' : ''}" data-act="rep-view" data-v="details">Day-wise details <span class="tab-count muted-count">${r.details.length}</span></button></div>
+      <div class="card">${repView === 'summary'
+        ? (r.summary.length ? `<div class="table-wrap"><table class="table"><thead><tr><th>Employee</th><th>Department</th><th class="num">Present</th><th class="num">Late</th><th class="num">Half-day</th><th class="num">Absent</th><th class="num">Leave</th><th class="num">Not marked</th><th class="num">Work hrs</th><th class="num">OT hrs</th><th>Attendance</th></tr></thead><tbody>
+          ${r.summary.map((s) => `<tr><td>${person(s.name, s.employeeId)}</td><td>${esc(s.department)}</td><td class="num">${s.present}</td><td class="num">${s.late}</td><td class="num">${s.halfDay}</td><td class="num">${s.absent}</td><td class="num">${s.leave}</td><td class="num">${s.notMarked}</td><td class="num">${s.workHours}</td><td class="num">${s.otHours || '—'}</td>
+            <td><div class="pct"><div class="progress"><span class="${s.attendancePct < 75 ? 'low' : ''}" style="width:${Math.min(100, s.attendancePct)}%"></span></div><span>${s.attendancePct}%</span></div></td></tr>`).join('')}
+          </tbody></table></div>` : empty('No employees match these filters'))
+        : (r.details.length ? `<div class="table-wrap"><table class="table"><thead><tr><th>Date</th><th>Employee</th><th>Department</th><th>Check in</th><th>Check out</th><th class="num">Work hrs</th><th class="num">OT hrs</th><th>Status</th><th>Remarks</th></tr></thead><tbody>
+          ${r.details.map((d) => `<tr><td class="nowrap">${fmtDate(d.date)} <span class="muted small">${weekday(d.date)}</span></td><td>${person(d.name, d.employeeId)}</td><td>${esc(d.department)}</td><td>${d.checkIn}</td><td>${d.checkOut}</td><td class="num">${d.workHours || '—'}</td><td class="num">${d.otHours || '—'}</td><td>${badge(d.status)}</td><td class="muted">${esc(d.remarks || '—')}</td></tr>`).join('')}
+          </tbody></table></div>` : empty('No attendance records in this period'))}</div>`;
+  }
+
+  /* ---------- File export (Excel / PDF) ---------- */
+  let dlPromise = null;
+  async function saveFile(filename, data) {
+    try {
+      if (!dlPromise) dlPromise = window.claude?.use ? window.claude.use('downloads') : Promise.resolve(null);
+      const dl = await dlPromise;
+      if (dl) { await dl.save({ filename, data }); toast(`${filename} downloaded`); return; }
+      const url = URL.createObjectURL(new Blob([data]));
+      const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      toast(`${filename} downloaded`);
+    } catch (e) {
+      if (e?.code === 'declined') toast('Download cancelled', 'err');
+      else toast(`Download not available here (${e?.message || e?.code || 'error'})`, 'err');
+    }
+  }
+  const SUM_HEAD = ['Emp ID', 'Name', 'Department', 'Present', 'Late', 'Half-day', 'Absent', 'Leave', 'Not Marked', 'Work Hrs', 'OT Hrs', 'Attendance %'];
+  const DET_HEAD = ['Date', 'Emp ID', 'Name', 'Department', 'Status', 'Check In', 'Check Out', 'Work Hrs', 'OT Hrs', 'Remarks'];
+  const sumRow = (s) => [s.employeeId, s.name, s.department, s.present, s.late, s.halfDay, s.absent, s.leave, s.notMarked, s.workHours, s.otHours, s.attendancePct];
+  const detRow = (d) => [d.date, d.employeeId, d.name, d.department, d.status, d.checkIn, d.checkOut, d.workHours, d.otHours, d.remarks];
+  const fname = (r, ext) => `attendance-${r.type}-${r.from}${r.from !== r.to ? `_to_${r.to}` : ''}.${ext}`;
+
+  async function exportExcel(r) {
+    if (!window.XLSX) return toast('Excel library could not load', 'err');
+    const wb = XLSX.utils.book_new();
+    const meta = [[`${SETTINGS.company} - ${r.label}`], [`Period: ${r.from} to ${r.to} | Working days: ${r.workingDays} | Employees: ${r.employees} | Generated: ${new Date().toLocaleString('en-IN')}`], []];
+    const t = r.totals;
+    const ws1 = XLSX.utils.aoa_to_sheet([...meta, SUM_HEAD, ...r.summary.map(sumRow), ['', 'TOTAL', '', t.present, t.late, t.halfDay, t.absent, t.leave, t.notMarked, t.workHours, t.otHours, '']]);
+    ws1['!cols'] = [10, 24, 18, 9, 7, 9, 8, 7, 11, 9, 8, 13].map((w) => ({ wch: w }));
+    ws1['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 11 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 11 } }];
+    XLSX.utils.book_append_sheet(wb, ws1, 'Summary');
+    const ws2 = XLSX.utils.aoa_to_sheet([...meta, DET_HEAD, ...r.details.map(detRow)]);
+    ws2['!cols'] = [12, 10, 24, 18, 10, 10, 10, 9, 8, 24].map((w) => ({ wch: w }));
+    ws2['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 9 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 9 } }];
+    ws2['!autofilter'] = { ref: `A4:J${4 + r.details.length}` };
+    XLSX.utils.book_append_sheet(wb, ws2, 'Details');
+    await saveFile(fname(r, 'xlsx'), XLSX.write(wb, { bookType: 'xlsx', type: 'array' }));
+  }
+
+  function pdfHeader(doc, title) {
+    const W = doc.internal.pageSize.getWidth();
+    doc.setFillColor(14, 14, 16); doc.rect(0, 0, W, 66, 'F');
+    doc.setFillColor(22, 163, 74); doc.rect(0, 66, W, 3, 'F');
+    doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.text(SETTINGS.company, 36, 30);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.setTextColor(212, 212, 216); doc.text(title, 36, 50);
+  }
+  function pdfFooter(doc) {
+    const W = doc.internal.pageSize.getWidth(); const H = doc.internal.pageSize.getHeight(); const n = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= n; i += 1) {
+      doc.setPage(i); doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(148, 163, 184);
+      doc.text(`Generated ${new Date().toLocaleString('en-IN')}  |  Page ${i} of ${n}`, W - 36, H - 20, { align: 'right' });
+    }
+  }
+
+  async function exportPdf(r) {
+    if (!window.jspdf?.jsPDF) return toast('PDF library could not load', 'err');
+    const doc = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+    const H = doc.internal.pageSize.getHeight();
+    pdfHeader(doc, r.label);
+    const t = r.totals;
+    doc.setTextColor(51, 65, 85); doc.setFontSize(9.5);
+    doc.text(`Period: ${r.from} to ${r.to}    Working days: ${r.workingDays}    Employees: ${r.employees}    Present: ${t.present}   Late: ${t.late}   Half-day: ${t.halfDay}   Absent: ${t.absent}   Leave: ${t.leave}   OT hrs: ${t.otHours}`, 36, 90);
+    doc.setTextColor(15, 23, 42); doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text('Employee Summary', 36, 114);
+    const common = { theme: 'striped', styles: { fontSize: 8.5, cellPadding: 5 }, headStyles: { fillColor: [31, 31, 35], textColor: 255 }, margin: { left: 36, right: 36, bottom: 40 } };
+    doc.autoTable({ ...common, startY: 122, head: [SUM_HEAD], body: r.summary.map((s) => { const row = sumRow(s); row[11] = `${row[11]}%`; return row; }),
+      foot: [['', 'TOTAL', '', t.present, t.late, t.halfDay, t.absent, t.leave, t.notMarked, t.workHours, t.otHours, '']], footStyles: { fillColor: [226, 232, 240], textColor: 20 } });
+    if (r.type !== 'monthly' || r.details.length <= 300) {
+      let y = doc.lastAutoTable.finalY + 28;
+      if (y > H - 100) { doc.addPage(); y = 50; }
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(15, 23, 42); doc.text('Attendance Details', 36, y);
+      const tones = { Present: [21, 128, 61], Late: [180, 83, 9], 'Half-day': [67, 56, 202], Absent: [185, 28, 28], Leave: [3, 105, 161] };
+      doc.autoTable({ ...common, startY: y + 8, head: [DET_HEAD], body: r.details.length ? r.details.map(detRow) : [['No attendance records for this period', '', '', '', '', '', '', '', '', '']],
+        didParseCell: (h) => { if (h.section === 'body' && h.column.index === 4 && tones[h.cell.raw]) { h.cell.styles.textColor = tones[h.cell.raw]; h.cell.styles.fontStyle = 'bold'; } } });
+    }
+    pdfFooter(doc);
+    await saveFile(fname(r, 'pdf'), doc.output('arraybuffer'));
+  }
+
+  async function payslipPdf(u) {
+    if (!window.jspdf?.jsPDF) return toast('PDF library could not load', 'err');
+    const p = payslip(u, wsPayMonth);
+    const rs = (n) => `Rs. ${Math.round(n).toLocaleString('en-IN')}`;
+    const doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4' });
+    pdfHeader(doc, `Salary Slip - ${monthLabel(wsPayMonth)}`);
+    const common = { theme: 'grid', styles: { fontSize: 9.5, cellPadding: 6 }, headStyles: { fillColor: [31, 31, 35], textColor: 255 }, margin: { left: 36, right: 36 } };
+    doc.autoTable({ ...common, startY: 92, body: [
+      ['Employee', u.name, 'Employee ID', u.employeeId || '-'], ['Designation', u.designation || '-', 'Department', u.department || '-'],
+      ['Working days', String(p.wd), 'Paid days', String(p.paidDays)], ['LOP days', String(p.lop), 'Overtime logged', hm(p.c.ot)],
+    ], columnStyles: { 0: { fontStyle: 'bold', fillColor: [248, 250, 252] }, 2: { fontStyle: 'bold', fillColor: [248, 250, 252] } } });
+    const rows = Math.max(p.earnings.length, p.deductions.length);
+    const body = Array.from({ length: rows }, (_, i) => [p.earnings[i]?.[0] || '', p.earnings[i] ? rs(p.earnings[i][1]) : '', p.deductions[i]?.[0] || '', p.deductions[i] ? rs(p.deductions[i][1]) : '']);
+    doc.autoTable({ ...common, startY: doc.lastAutoTable.finalY + 18, head: [['Earnings', 'Amount', 'Deductions', 'Amount']], body,
+      foot: [['Gross earnings', rs(p.gross), 'Total deductions', rs(p.totalDed)]], footStyles: { fillColor: [241, 245, 249], textColor: 20, fontStyle: 'bold' },
+      columnStyles: { 1: { halign: 'right' }, 3: { halign: 'right' } } });
+    const y = doc.lastAutoTable.finalY + 24;
+    doc.setFillColor(253, 238, 236); doc.roundedRect(36, y, doc.internal.pageSize.getWidth() - 72, 44, 6, 6, 'F');
+    doc.setTextColor(120, 30, 22); doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
+    doc.text('Net pay', 52, y + 27); doc.text(rs(p.net), doc.internal.pageSize.getWidth() - 52, y + 27, { align: 'right' });
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(100, 116, 139);
+    doc.text('This is a system-generated salary slip and does not require a signature.', 36, y + 66);
+    pdfFooter(doc);
+    await saveFile(`salary-slip-${u.employeeId || 'emp'}-${wsPayMonth}.pdf`, doc.output('arraybuffer'));
+  }
+
+  /* ===================== Profile ===================== */
+  function viewProfile(c, u) {
+    const rows = [['Email', u.email], ['Role', u.role === 'admin' ? 'Administrator' : 'Employee'], ['Employee ID', u.employeeId], ['Department', u.department], ['Designation', u.designation], ['Phone', u.phone], ['Joined', fmtDate(u.joinDate)]];
+    c.innerHTML = `${header('My Profile', 'Your account details and security settings')}
+      <div class="grid-2">
+        <div class="card"><div class="profile-head">${avatar(u.name, 64, 'avatar-brand')}<div><h3>${esc(u.name)}</h3><span class="muted">${esc(u.designation || '')}</span></div></div>
+          <dl class="details">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v || '—')}</dd></div>`).join('')}</dl>
+          <p style="margin-top:18px"><button class="reset-link" data-act="reset">Reset demo data</button></p></div>
+        <form class="card" data-form="password"><div class="card-head"><h3>${ic('key', 'icon icon-sm')} Change password</h3></div>
+          <label class="field"><span>Current password</span><input name="cur" type="password" required></label>
+          <label class="field"><span>New password</span><input name="nw" type="password" minlength="8" required></label>
+          <label class="field"><span>Confirm new password</span><input name="cf" type="password" minlength="8" required></label>
+          <button class="btn btn-primary">Update password</button></form>
+      </div>`;
+  }
+
+
+  /* ===================== Admin: Employee Dashboard (HR 360° view) ===================== */
+  const ED_TABS = [['overview', 'Overview'], ['attendance', 'Attendance'], ['timeoff', 'Time off'], ['payroll', 'Payroll'], ['documents', 'Documents']];
+  const DOC_FOLDERS = ['Signed Documents', 'ID & Address Proofs', 'Certificates', 'Non-Disclosure Agreements', 'Uploads'];
+  const LEAVE_ALLOWANCE = { vacation: 18, sick: 9 }; // days per year
+  const ED_COLORS = { onTime: '#22c55e', late: '#15803d', absent: '#D5CFF5' };
+  let edEmpId = null;
+  let edTab = 'overview';
+  let edPayPage = 1;
+  let edOpenFolder = null;
+  let edAttMonth = today().slice(0, 7);
+
+  const edList = () => emps().filter((e) => e.status === 'active').sort((a, b) => a.name.localeCompare(b.name));
+  const edEmp = () => byId(edEmpId) || edList()[0];
+  const lastMonths = (n) => {
+    const out = []; const d = new Date(); d.setDate(1);
+    for (let i = 0; i < n; i += 1) { out.unshift(`${d.getFullYear()}-${pad(d.getMonth() + 1)}`); d.setMonth(d.getMonth() - 1); }
+    return out;
+  };
+  const shortMonth = (ym) => new Date(`${ym}-01T00:00:00`).toLocaleDateString('en-IN', { month: 'short' });
+  const docsOf = (id) => (db.docs && db.docs[id]) || [];
+
+  function monthRates(e, ym) {
+    const { from, to } = monthRange(ym);
+    let on = 0; let late = 0; let absent = 0;
+    eachDay(from, to < today() ? to : today()).forEach((d) => {
+      const r = getAtt(e.id, d); if (!r) return;
+      if (r.status === 'Present') on += 1;
+      else if (r.status === 'Late' || r.status === 'Half-day') late += 1;
+      else if (r.status === 'Absent') absent += 1;
+    });
+    const total = on + late + absent;
+    const pct = (n) => (total ? Math.round((n / total) * 1000) / 10 : 0);
+    return { ym, on: pct(on), late: pct(late), absent: pct(absent), total };
+  }
+
+  function leaveBalances(e) {
+    const t = today(); const year = t.slice(0, 4);
+    let vacUsed = 0; let sickUsed = 0; let absent = 0; let otMonth = 0; let otYear = 0;
+    Object.entries(db.att).forEach(([k, r]) => {
+      const [id, d] = k.split('|');
+      if (id !== e.id || !d.startsWith(year) || d > t) return;
+      if (r.status === 'Leave') { if (/sick/i.test(r.remarks || '')) sickUsed += 1; else vacUsed += 1; }
+      if (r.status === 'Absent') absent += 1;
+      otYear += r.otMinutes || 0;
+      if (d.startsWith(t.slice(0, 7))) otMonth += r.otMinutes || 0;
+    });
+    let vacSched = 0; let sickSched = 0;
+    db.leaves.filter((l) => l.empId === e.id && ['Approved', 'Pending'].includes(l.status) && l.to > t).forEach((l) => {
+      const days = workingDays(l.from > t ? l.from : addDays(t, 1), l.to).length;
+      if (l.type === 'Sick') sickSched += days; else vacSched += days;
+    });
+    return {
+      vacation: Math.max(0, LEAVE_ALLOWANCE.vacation - vacUsed) * 8, vacSched: vacSched * 8, vacUsed,
+      sick: Math.max(0, LEAVE_ALLOWANCE.sick - sickUsed) * 8, sickSched: sickSched * 8, sickUsed,
+      absent, otMonth, otYear,
+    };
+  }
+
+  function payrollRows(e) {
+    const cur = today().slice(0, 7);
+    const join = (e.joinDate || '2000-01').slice(0, 7);
+    return lastMonths(24).filter((ym) => ym >= join).reverse().map((ym, i) => {
+      const p = payslip(e, ym);
+      const { to } = monthRange(ym);
+      return { n: i + 1, ym, label: `${monthLabel(ym)} salary`, date: ym === cur ? '—' : fmtDate(to), amount: p.net, status: ym === cur ? 'Pending' : 'Paid' };
+    });
+  }
+
+  const edPill = (s) => `<span class="ed-status ${s === 'Paid' ? 'paid' : 'pending'}">${s}</span>`;
+
+  function edPayrollTable(e, perPage = 5) {
+    const rows = payrollRows(e);
+    const pages = Math.max(1, Math.ceil(rows.length / perPage));
+    if (edPayPage > pages) edPayPage = pages;
+    const view = rows.slice((edPayPage - 1) * perPage, edPayPage * perPage);
+    const nums = [];
+    for (let i = 1; i <= pages; i += 1) {
+      if (i === 1 || i === pages || Math.abs(i - edPayPage) <= 1) nums.push(i);
+      else if (nums[nums.length - 1] !== '…') nums.push('…');
+    }
+    return `<div class="ed-sec-head"><h3>Recent Payroll</h3>
+        <div class="ed-pager">${nums.map((n) => (n === '…' ? '<span>…</span>' : `<button class="${n === edPayPage ? 'on' : ''}" data-act="ed-page" data-p="${n}">${n}</button>`)).join('')}
+          <button data-act="ed-page" data-p="${Math.min(pages, edPayPage + 1)}" ${edPayPage >= pages ? 'disabled' : ''}>Next ${ic('right', 'icon icon-xs')}</button></div></div>
+      <div class="ed-table-wrap"><table class="ed-table"><thead><tr><th>№</th><th>Pay period</th><th>Date</th><th>Amount</th><th>Status</th></tr></thead><tbody>
+        ${view.length ? view.map((r) => `<tr><td>${r.n}</td><td>${r.label}</td><td>${r.date}</td><td>${money(r.amount)}</td><td><button class="ed-pill-btn" data-act="ed-slip" data-ym="${r.ym}">${edPill(r.status)}</button></td></tr>`).join('') : '<tr><td colspan="5" class="muted">No payroll yet</td></tr>'}
+      </tbody></table></div>`;
+  }
+
+  function edDocsPanel(e, full = false) {
+    const docs = docsOf(e.id);
+    const paid = payrollRows(e).filter((r) => r.status === 'Paid').length;
+    const folders = [...DOC_FOLDERS.map((f) => [f, docs.filter((d) => d.folder === f)]), ['Payslips', null]];
+    return `<div class="ed-docs ${full ? 'full' : ''}"><h3>Documents</h3><ul>
+      ${folders.filter(([f, list]) => f !== 'Uploads' || (list && list.length)).map(([f, list]) => {
+        const count = list ? list.length : paid;
+        const open = edOpenFolder === f || full;
+        return `<li><button class="ed-folder" data-act="ed-folder" data-f="${esc(f)}">${ic(open ? 'folderOpen' : 'folder', 'icon icon-sm')}<span>${esc(f)}</span><em>${count}</em></button>
+          ${open ? `<div class="ed-files">${list ? (list.length ? list.map((d) => `<div>${ic('file', 'icon icon-xs')}<span class="ed-fname">${esc(d.name)}</span>${full ? `<span class="muted small">${d.date ? fmtDate(d.date) : ''}</span>` : ''}</div>`).join('') : '<div class="muted small">No files</div>')
+            : `<div class="muted small">${paid} monthly salary slips. Open them from Payroll.</div>`}</div>` : ''}</li>`;
+      }).join('')}</ul>
+      <button class="ed-upload" data-act="ed-upload">${ic('upload', 'icon icon-sm')} Upload</button></div>`;
+  }
+
+  function edTiles(e) {
+    const b = leaveBalances(e);
+    return `<div class="ed-tiles">
+      <div class="ed-tile t-orange">${ic('palm', 'ed-tile-art')}<span>Vacation</span><strong>${b.vacation} h</strong><small>${b.vacSched} hours scheduled</small></div>
+      <div class="ed-tile t-purple">${ic('virus', 'ed-tile-art')}<span>Sick days</span><strong>${b.sick} h</strong><small>${b.sickSched} hours scheduled</small></div>
+      <div class="ed-tile t-grey">${ic('clock', 'ed-tile-art')}<span>Overtime</span><strong>${hrs(b.otMonth)} h</strong><small>this month · ${hrs(b.otYear)} h this year</small></div>
+      <div class="ed-tile t-black">${ic('x', 'ed-tile-art')}<span>Absences</span><strong>${b.absent} d</strong><small>this year</small></div>
+    </div>`;
+  }
+
+  function viewEmployeeDashboard(c) {
+    const list = edList();
+    if (!list.length) { c.innerHTML = `${header('Employees')}${empty('No active employees')}`; return; }
+    const e = edEmp(); edEmpId = e.id;
+    c.innerHTML = `<div class="ed">
+      <div class="ed-top">
+        <a href="#employees" class="ed-back">${ic('left')} <h1>Employees</h1></a>
+        <div class="input-icon ed-search">${ic('search', 'icon icon-sm')}<input list="ed-emps" id="ed-search" placeholder="Search employee…"><datalist id="ed-emps">${list.map((x) => `<option value="${esc(x.name)} · ${esc(x.employeeId)}">`).join('')}</datalist></div>
+      </div>
+      <div class="ed-tabs">${ED_TABS.map(([k, l]) => `<button class="${edTab === k ? 'on' : ''}" data-act="ed-tab" data-k="${k}">${l}</button>`).join('')}</div>
+      <div class="ed-grid">
+        <div class="ed-main">
+          <div class="ed-person">
+            <span class="ed-avatar">${esc(initials(e.name))}</span>
+            <div class="ed-person-text"><h2>${esc(e.name)}</h2><span>${esc(e.designation || '')} · ${esc(e.department || '')}</span></div>
+            <div class="ed-person-actions"><button class="ed-btn-outline" data-act="ed-info">Info</button><button class="ed-btn-solid" data-act="ed-next">Next employee ${ic('right', 'icon icon-xs')}</button></div>
+          </div>
+          <div id="ed-body"></div>
+        </div>
+        <aside class="ed-side">${edDocsPanel(e)}${edTiles(e)}</aside>
+      </div></div>`;
+    renderEdBody(e);
+  }
+
+  function renderEdBody(e) {
+    charts.forEach((ch) => ch.destroy()); charts = [];
+    const el = $('#ed-body');
+    if (edTab === 'overview') {
+      el.innerHTML = `<div class="ed-sec-head"><h3>Attendance Rate</h3><div class="ed-legend"><i style="background:${ED_COLORS.onTime}"></i>On time<i style="background:${ED_COLORS.late}"></i>Late<i style="background:${ED_COLORS.absent}"></i>Absent</div></div>
+        <div class="ed-chart"><canvas id="ed-rate"></canvas></div>${edPayrollTable(e)}`;
+      drawRate(e);
+    } else if (edTab === 'attendance') {
+      const { from, to } = monthRange(edAttMonth);
+      const rows = eachDay(from, to).reverse().map((d) => ({ d, r: getAtt(e.id, d) })).filter((x) => x.r || isHoliday(x.d));
+      const rates = monthRates(e, edAttMonth);
+      el.innerHTML = `<div class="ed-sec-head"><h3>Attendance · ${monthLabel(edAttMonth)}</h3><input type="month" id="ed-month" value="${edAttMonth}" max="${today().slice(0, 7)}"></div>
+        <div class="ed-mini-kpis"><div><strong>${rates.on}%</strong><span>On time</span></div><div><strong>${rates.late}%</strong><span>Late / half day</span></div><div><strong>${rates.absent}%</strong><span>Absent</span></div><div><strong>${rates.total}</strong><span>Days recorded</span></div></div>
+        <div class="ed-table-wrap"><table class="ed-table"><thead><tr><th>Date</th><th>Status</th><th>In</th><th>Out</th><th>Hours</th></tr></thead><tbody>
+        ${rows.length ? rows.map(({ d, r }) => (r ? `<tr><td>${fmtDate(d)} <span class="muted small">${weekday(d)}</span></td><td>${badge(r.status)}</td><td>${r.checkIn || '—'}</td><td>${r.checkOut || '—'}</td><td>${hrs(r.workMinutes)}${r.otMinutes ? ` <span class="ot-tag">+${hrs(r.otMinutes)} OT</span>` : ''}</td></tr>`
+          : `<tr><td>${fmtDate(d)}</td><td><span class="badge badge-holiday">Holiday</span></td><td colspan="3" class="muted">${esc(isHoliday(d))}</td></tr>`)).join('') : '<tr><td colspan="5" class="muted">No attendance this month</td></tr>'}
+        </tbody></table></div>`;
+    } else if (edTab === 'timeoff') {
+      const b = leaveBalances(e);
+      const items = db.leaves.filter((l) => l.empId === e.id).sort((a, x) => x.createdAt - a.createdAt);
+      el.innerHTML = `<div class="ed-sec-head"><h3>Time off · ${today().slice(0, 4)}</h3></div>
+        <div class="ed-mini-kpis"><div><strong>${b.vacUsed} / ${LEAVE_ALLOWANCE.vacation}</strong><span>Vacation days used</span></div><div><strong>${b.sickUsed} / ${LEAVE_ALLOWANCE.sick}</strong><span>Sick days used</span></div><div><strong>${(b.vacSched + b.sickSched) / 8}</strong><span>Days scheduled</span></div><div><strong>${b.absent}</strong><span>Absences</span></div></div>
+        <div class="ed-table-wrap"><table class="ed-table"><thead><tr><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Reason</th><th>Status</th></tr></thead><tbody>
+        ${items.length ? items.map((l) => `<tr><td>${l.type}</td><td>${fmtDate(l.from)}</td><td>${fmtDate(l.to)}</td><td>${l.days}</td><td class="wrap">${esc(l.reason)}</td><td>${leaveBadge(l.status)}</td></tr>`).join('') : '<tr><td colspan="6" class="muted">No leave requests</td></tr>'}
+        </tbody></table></div>`;
+    } else if (edTab === 'payroll') {
+      el.innerHTML = `${edPayrollTable(e, 10)}<p class="muted small" style="margin-top:10px">Click a status to view that month's salary slip. Monthly salary: ${money(e.salary || 0)}.</p>`;
+    } else if (edTab === 'documents') {
+      el.innerHTML = edDocsPanel(e, true);
+    }
+  }
+
+  function drawRate(e) {
+    const data = lastMonths(12).map((ym) => monthRates(e, ym));
+    if (!window.Chart) { $('#ed-rate').parentElement.innerHTML = '<div class="muted small">Chart library could not load.</div>'; return; }
+    charts.push(new Chart($('#ed-rate'), {
+      type: 'bar',
+      data: {
+        labels: data.map((d) => shortMonth(d.ym)),
+        datasets: [
+          { label: 'On time', data: data.map((d) => d.on), backgroundColor: ED_COLORS.onTime },
+          { label: 'Late', data: data.map((d) => d.late), backgroundColor: ED_COLORS.late },
+          { label: 'Absent', data: data.map((d) => d.absent), backgroundColor: ED_COLORS.absent },
+        ].map((ds) => ({ ...ds, borderRadius: 6, borderSkipped: false, maxBarThickness: 26, borderColor: '#fff', borderWidth: { top: 2 } })),
+      },
+      options: {
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#fff', titleColor: '#111', bodyColor: '#555', borderColor: '#ececf2', borderWidth: 1, padding: 10,
+            usePointStyle: true, boxWidth: 8, boxHeight: 8,
+            callbacks: { label: (ctx) => ` ${ctx.parsed.y}%  ${ctx.dataset.label}`, afterBody: (items) => (data[items[0].dataIndex].total ? '' : 'No attendance recorded') },
+          },
+        },
+        scales: {
+          x: { stacked: true, grid: { display: false }, border: { display: false }, ticks: { color: '#555', font: { size: 11 } } },
+          y: { stacked: true, max: 100, ticks: { stepSize: 20, callback: (v) => `${v} %`, color: '#555', font: { size: 11 } }, grid: { display: false }, border: { display: false } },
+        },
+      },
+    }));
+  }
+
+  function edSlipModal(e, ym) {
+    const p = payslip(e, ym);
+    openModal({
+      title: `${esc(e.name)} · ${monthLabel(ym)}`, width: 520,
+      body: `<div class="slip-meta" style="grid-template-columns:repeat(2,1fr)"><div><span>Working days</span><strong>${p.wd}</strong></div><div><span>Paid days</span><strong>${p.paidDays}</strong></div><div><span>LOP days</span><strong>${p.lop}</strong></div><div><span>Overtime</span><strong>${hm(p.c.ot)}</strong></div></div>
+        <table class="table slip"><tbody>${p.earnings.map(([n, v]) => `<tr><td>${n}</td><td class="num">${money(v)}</td></tr>`).join('')}
+        ${p.deductions.map(([n, v]) => `<tr><td>${n}</td><td class="num tone-text-red">− ${money(v)}</td></tr>`).join('')}</tbody></table>
+        <div class="net-pay" style="margin-top:14px"><span>Net pay</span><strong>${money(p.net)}</strong></div>`,
+      footer: '<button class="btn btn-ghost" data-act="modal-close">Close</button>',
+    });
+  }
+
+  function edInfoModal(e) {
+    const rows = [['Employee ID', e.employeeId], ['Email', e.email], ['Phone', e.phone], ['Department', e.department], ['Designation', e.designation], ['Joined', fmtDate(e.joinDate)], ['Monthly salary', money(e.salary || 0)], ['Status', e.status === 'active' ? 'Active' : 'Inactive']];
+    openModal({
+      title: esc(e.name), width: 480,
+      body: `<dl class="details">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v || '—')}</dd></div>`).join('')}</dl>`,
+      footer: `<button class="btn btn-ghost" data-act="modal-close">Close</button><button class="btn btn-primary" data-act="emp-edit" data-id="${e.id}">${ic('edit', 'icon icon-sm')} Edit details</button>`,
+    });
+  }
+
+  function edUploadModal() {
+    openModal({
+      title: 'Upload document', width: 460,
+      body: `<form data-form="ed-upload"><label class="field"><span>Folder</span><select name="folder">${DOC_FOLDERS.map((f) => `<option ${f === 'Uploads' ? 'selected' : ''}>${f}</option>`).join('')}</select></label>
+        <label class="field"><span>File</span><input type="file" name="file" required></label>
+        <p class="muted small">In this demo only the file name is saved, in your browser. The full project stores files on the server.</p>
+        <div class="modal-foot inline"><button type="button" class="btn btn-ghost" data-act="modal-close">Cancel</button><button class="btn btn-primary">${ic('upload', 'icon icon-sm')} Upload</button></div></form>`,
+    });
+  }
+
+  const VIEWS = { 'employee-dashboard': viewEmployeeDashboard, workspace: viewWorkspace, dashboard: viewDashboard, employees: viewEmployees, register: viewRegister, 'team-timesheets': viewTeam, leaves: viewLeaves, reports: viewReports, profile: viewProfile };
+
+
+  /* ===================== Attendance Kiosk: every person registers individually ===================== */
+  let kioskQ = '';
+  const kioskPeople = () => db.users.filter((u) => u.status === 'active').sort((a, b) => a.name.localeCompare(b.name));
+  function kioskStatus(u) {
+    const rec = getAtt(u.id, today());
+    const ph = dayPhase(u, rec);
+    const ses = rec?.sessions || [];
+    if (ph.ot) return ['OT running', 'k-ot'];
+    if (ph.phase === 'open') return [`Working · ${ph.shift.label}`, 'k-in'];
+    if (ph.phase === 'holiday') return ['Holiday', 'k-off'];
+    if (ph.phase === 'leave') return ['On leave', 'k-off'];
+    if (ph.phase === 'admin') return [`Marked ${rec.status}`, 'k-off'];
+    if (ses.some(isReg)) return [ph.phase === 'done' ? 'Day complete' : 'Clocked out', 'k-out'];
+    return ['Not clocked in', 'k-none'];
+  }
+  function renderKiosk() {
+    clearInterval(timer);
+    syncToday();
+    $('#app').innerHTML = `<div class="kiosk">
+      <header class="kiosk-head">
+        <div class="brand"><span class="brand-logo">${ic('calCheck')}</span><div><div class="brand-name">AttendPro</div><div class="brand-sub">Attendance Kiosk</div></div></div>
+        <div class="kiosk-clock"><div id="k-clock"></div><div>${fmtDate(today(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</div></div>
+        <button class="btn kiosk-exit" data-act="kiosk-exit">${ic('logout', 'icon icon-sm')} Exit kiosk</button>
+      </header>
+      <main class="kiosk-body">
+        <h1>Tap your name to register your attendance</h1>
+        <p>Each person clocks in, clocks out and logs OT for themselves with their own 4-digit PIN.</p>
+        <div class="input-icon kiosk-search">${ic('search', 'icon icon-sm')}<input id="k-q" placeholder="Search your name or employee ID…" value="${esc(kioskQ)}" autocomplete="off"></div>
+        <div class="kiosk-grid" id="k-grid"></div>
+        <p class="kiosk-note">Demo: everyone's PIN is <strong>1234</strong>. Admins can set a different PIN for each person on the Employees page.</p>
+      </main></div>`;
+    renderKioskGrid();
+    const tick = () => {
+      const el = $('#k-clock'); if (!el) return clearInterval(timer);
+      el.textContent = sim ? minToHH(Math.floor(nowMinF())) : new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+      if (syncToday() && !modalOpen()) renderKioskGrid();
+    };
+    tick(); timer = setInterval(tick, 1000);
+  }
+  function renderKioskGrid() {
+    const g = $('#k-grid'); if (!g) return;
+    const q = kioskQ.trim().toLowerCase();
+    const list = kioskPeople().filter((u) => !q || [u.name, u.employeeId, u.department].some((v) => (v || '').toLowerCase().includes(q)));
+    g.innerHTML = list.length ? list.map((u) => {
+      const [label, cls] = kioskStatus(u);
+      return `<button class="kiosk-card" data-act="kiosk-pick" data-id="${u.id}">${avatar(u.name, 52, 'avatar-brand')}
+        <span class="kiosk-name">${esc(u.name)}</span><span class="kiosk-sub">${esc(u.employeeId || '')} · ${esc(u.department || '')}</span>
+        <span class="kiosk-status ${cls}">${label}</span></button>`;
+    }).join('') : empty('No one matches your search');
+  }
+  function kioskDots() {
+    const n = ($('#k-pin')?.value || '').length;
+    const d = $('#k-dots'); if (d) d.innerHTML = [0, 1, 2, 3].map((i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('');
+  }
+  function kioskPin(u) {
+    openModal({
+      title: `Hi ${esc(u.name.split(' ')[0])}, enter your PIN`, width: 360,
+      body: `<form data-form="kiosk-pin" data-id="${u.id}" class="kiosk-pin">
+        <div id="k-dots" class="k-dots"></div>
+        <input id="k-pin" name="pin" type="password" inputmode="numeric" maxlength="4" autocomplete="off" class="k-pin-input" aria-label="PIN">
+        <div id="k-err" class="tone-text-red small center"></div>
+        <div class="k-pad">${['1', '2', '3', '4', '5', '6', '7', '8', '9', 'del', '0'].map((k) => `<button type="button" data-act="kiosk-key" data-k="${k}" class="${k === 'del' ? 'k-del' : ''}">${k === 'del' ? '⌫' : k}</button>`).join('')}<button class="k-ok">OK</button></div>
+      </form>`,
+    });
+    kioskDots(); $('#k-pin').focus();
+  }
+  function kioskActions(u) {
+    const rec = getAtt(u.id, today());
+    const ph = dayPhase(u, rec);
+    const [label, cls] = kioskStatus(u);
+    const btn = (op, text, style, icon, disabled, why) => `<button class="k-act ${style}" data-act="kiosk-do" data-op="${op}" data-id="${u.id}" ${disabled ? 'disabled' : ''}>${ic(icon)}<span>${text}</span>${disabled && why ? `<small>${why}</small>` : ''}</button>`;
+    const shiftInfo = ph.phase === 'open' ? `On the ${ph.shift.label.toLowerCase()} shift since ${ph.session.in} · auto clock out at ${ph.shift.end}`
+      : ph.phase === 'clockable' ? `${ph.shift.label} shift ${ph.shift.start}–${ph.shift.end} is open`
+      : ph.shift ? `Next: ${ph.shift.label} shift, clock in opens at ${minToHH(toMin(ph.shift.start) - OPEN_EARLY)}` : 'All shifts for today have ended';
+    const otErr = otStartBlocker(u);
+    openModal({
+      title: esc(u.name), width: 460,
+      body: `<div class="k-who">${avatar(u.name, 46, 'avatar-brand')}<div><div class="muted small">${esc(u.employeeId || '')} · ${esc(u.designation || '')}</div><span class="kiosk-status ${cls}">${label}</span></div></div>
+        <p class="muted small" style="margin:12px 0 14px">${shiftInfo}${rec?.workMinutes ? ` · worked ${hm(rec.workMinutes)}` : ''}</p>
+        <div class="k-acts">
+          ${ph.phase === 'open' ? btn('out', 'Clock Out', 'k-red', 'logout') : btn('in', 'Clock In', 'k-green', 'login', ph.phase !== 'clockable', 'Not open now')}
+          ${ph.ot ? btn('otstop', `Stop OT (since ${ph.ot.in})`, 'k-purple', 'ot') : btn('otstart', 'Start OT', 'k-purple', 'ot', !!otErr, otErr)}
+        </div>`,
+      footer: '<button class="btn btn-ghost" data-act="modal-close">Done</button>',
+    });
+  }
+  function kioskDone(u, msg) {
+    openModal({
+      title: 'Attendance registered', width: 380,
+      body: `<div class="k-done">${ic('checkCircle')}<strong>${esc(u.name)}</strong><span>${esc(msg)}</span></div>`,
+    });
+    setTimeout(() => { if ($('.k-done')) closeModal(); }, 3000);
+  }
+
+  /* ===================== Clock & OT operations (shared by workspace and kiosk) ===================== */
+  function opClockIn(u) {
+    const t = today(); const k = `${u.id}|${t}`;
+    const ph = dayPhase(u, db.att[k]);
+    if (ph.phase !== 'clockable') throw new Error('Clock in is not open right now');
+    if (!db.att[k]?.sessions) db.att[k] = { sessions: [], source: 'self', remarks: '' };
+    const inT = nowHH(); let extra = '';
+    const ot = db.att[k].sessions.find((s) => !isReg(s) && !s.out);
+    if (ot) { ot.out = inT; extra = ' · overtime stopped'; }
+    db.att[k].sessions.push({ shift: ph.shift.key, in: inT, out: null });
+    syncRec(db.att[k], t); persist();
+    return `Clocked in at ${inT} for the ${ph.shift.label.toLowerCase()} shift${db.att[k].status === 'Late' ? ' (late)' : ''}${extra}`;
+  }
+  function opClockOut(u) {
+    const t = today(); const rec = getAtt(u.id, t);
+    const s = rec?.sessions?.find((x) => isReg(x) && !x.out);
+    if (!s) throw new Error('You are not clocked in to a shift');
+    s.out = nowHH(); if (toMin(s.out) < toMin(s.in)) s.out = s.in;
+    syncRec(rec, t); persist();
+    return `Clocked out at ${s.out}`;
+  }
+  function otStartBlocker(u) {
+    const t = today(); const rec = getAtt(u.id, t);
+    if (rec && rec.source === 'admin' && !rec.sessions) return 'Attendance for today was already recorded by HR';
+    const ses = rec?.sessions || [];
+    if (ses.some((s) => !isReg(s) && !s.out)) return 'Overtime is already running';
+    if (ses.some((s) => isReg(s) && !s.out)) return 'You are on a shift right now. Clock out first, or use “Record out time”';
+    const dayOff = isOff(t) || rec?.status === 'Leave' || approvedLeaveOn(u.id, t);
+    const sh = inShiftHours(nowMinF());
+    if (sh && !dayOff) return `Overtime can be started outside shift hours (now inside the ${sh.label.toLowerCase()} shift ${sh.start}–${sh.end})`;
+    return null;
+  }
+  function opOtStart(u) {
+    const err = otStartBlocker(u); if (err) throw new Error(err);
+    const t = today(); const k = `${u.id}|${t}`;
+    if (!db.att[k]) db.att[k] = { sessions: [], source: 'self', remarks: '' };
+    if (!db.att[k].sessions) db.att[k].sessions = [];
+    const inT = nowHH();
+    db.att[k].sessions.push({ shift: 'ot', in: inT, out: null });
+    syncRec(db.att[k], t); persist();
+    return `Overtime started at ${inT}`;
+  }
+  function opOtStop(u) {
+    const t = today(); const rec = getAtt(u.id, t);
+    const s = rec?.sessions?.find((x) => !isReg(x) && !x.out);
+    if (!s) throw new Error('No overtime is running');
+    s.out = nowHH(); if (toMin(s.out) < toMin(s.in)) s.out = s.in;
+    syncRec(rec, t); persist();
+    return `Overtime stopped at ${s.out} · ${hm(workMin(s.in, s.out)) === '—' ? '0h 00m' : hm(workMin(s.in, s.out))} recorded`;
+  }
+  const workMin = (i, o) => Math.max(0, toMin(o) - toMin(i));
+  function runOp(fn, u, after) {
+    try { const msg = fn(u); after?.(); toast(msg); } catch (e) { toast(e.message, 'err'); }
+  }
+
+  /* ===================== OT menu: start overtime or record out time ===================== */
+  function openOtMenu() {
+    const u = me(); const rec = getAtt(u.id, today());
+    const err = otStartBlocker(u);
+    const hasShift = (rec?.sessions || []).some(isReg);
+    openModal({
+      title: 'OT · Overtime &amp; Out Time', width: 540,
+      body: `<div class="ot-choice ${err ? 'is-off' : ''}"><div class="ot-choice-icon">${ic('play')}</div>
+          <div><strong>Start overtime now</strong><p>Starts an overtime timer. Everything until you press <em>Stop OT</em> counts as overtime.</p>${err ? `<p class="tone-text-red small">${err}</p>` : ''}</div>
+          <button class="btn btn-ot" data-act="ot-start" ${err ? 'disabled' : ''}>Start OT</button></div>
+        <div class="ot-choice ${hasShift ? '' : 'is-off'}"><div class="ot-choice-icon">${ic('clock')}</div>
+          <div><strong>Record out time</strong><p>Enter when you actually stopped a shift: after the shift end counts as overtime, before it means you left early.</p>${hasShift ? '' : '<p class="muted small">Clock in to a shift first.</p>'}</div>
+          <button class="btn btn-outline" data-act="ot-outtime" ${hasShift ? '' : 'disabled'}>Record</button></div>`,
+    });
+  }
+
+  /* ===================== OT (Out Time) ===================== */
+  function openOT() {
+    const u = me(); const t = today(); const rec = getAtt(u.id, t);
+    const s = rec?.sessions?.find((x) => isReg(x) && !x.out) || lastSession(rec);
+    if (!s) return toast('Clock in first to record an out time', 'err');
+    const sh = shiftOf(s.shift);
+    const isOpen = !s.out;
+    const def = isOpen ? nowHH() : s.out;
+    openModal({
+      title: 'OT · Record Out Time', width: 500,
+      body: `<form data-form="ot" data-shift="${s.shift}">
+        <div class="ot-summary"><div><span>Shift</span><strong>${sh.label} ${sh.start}–${sh.end}</strong></div><div><span>Clocked in</span><strong>${s.in}</strong></div><div><span>Current out</span><strong>${s.out ? `${s.out}${s.auto ? ' (auto)' : ''}` : 'still working'}</strong></div></div>
+        <p class="muted small" style="margin:14px 0">Enter the time you actually stopped working. An out time later than ${sh.end} is counted as <strong>overtime</strong>; an earlier one records that you left early.</p>
+        <div class="form-grid">
+          <label class="field"><span>Out time *</span><input type="time" name="out" value="${def}" required></label>
+          <label class="field"><span>Reason *</span><select name="reason">${OT_REASONS.map((r) => `<option>${r}</option>`).join('')}</select></label>
+          <label class="field span-2"><span>Note (optional)</span><input name="note" maxlength="200" placeholder="e.g. Finished slab inspection at site B"></label>
+        </div>
+        <div id="ot-preview" class="ot-preview"></div>
+        <div class="modal-foot inline"><button type="button" class="btn btn-ghost" data-act="modal-close">Cancel</button><button class="btn btn-primary">${ic('save', 'icon icon-sm')} Save out time</button></div>
+      </form>`,
+    });
+    updateOtPreview();
+  }
+  function updateOtPreview() {
+    const f = document.querySelector('[data-form="ot"]'); if (!f) return;
+    const sh = shiftOf(f.dataset.shift); const out = f.out.value; const el = $('#ot-preview');
+    if (!out) { el.innerHTML = ''; return; }
+    const diff = toMin(out) - toMin(sh.end);
+    el.innerHTML = diff > 0 ? `<span class="ot-tag">+${hm(diff)} overtime</span> beyond the ${sh.end} shift end`
+      : diff < 0 ? `<span class="s-chip chip-missed">Leaving ${hm(-diff)} early</span>` : 'Exactly at shift end';
+  }
+
+  /* ===================== Actions ===================== */
+  const ACTIONS = {
+    'modal-bg': (el, e) => { if (e.target === el) closeModal(); },
+    'modal-close': closeModal,
+    'open-menu': () => { $('#sidebar').classList.add('open'); $('#sb-backdrop').style.display = 'block'; },
+    'close-menu': () => { $('#sidebar').classList.remove('open'); $('#sb-backdrop').style.display = 'none'; },
+    rerender: () => { render(); toast('Refreshed'); },
+    logout: () => { endSim(); db.session = null; persist(); try { history.replaceState(null, '', location.pathname + location.search); } catch { /* ignore */ } render(); },
+    reset: () => openModal({ title: 'Reset demo data?', width: 440, body: '<p>This restores all employees, attendance and leave requests to the original sample data. Your changes will be lost.</p>',
+      footer: '<button class="btn btn-ghost" data-act="modal-close">Cancel</button><button class="btn btn-danger" data-act="reset-yes">Reset</button>' }),
+    'reset-yes': () => { const s = db.session; db = seed(); db.session = byId(s) ? s : null; persist(); shellRole = null; render(); toast('Demo data reset'); },
+    // workspace
+    'ws-tab': (el) => { wsTab = el.dataset.k; document.querySelectorAll('.ws-tab').forEach((b) => b.classList.toggle('active', b.dataset.k === wsTab)); renderWsTab(me()); },
+    'ws-week': (el) => { const n = addDays(wsWeek, Number(el.dataset.n)); if (n <= today()) { wsWeek = n; renderWsTab(me()); } },
+    'clock-in': () => runOp(opClockIn, me(), () => viewWorkspace($('#content'), me())),
+    'clock-out': () => runOp(opClockOut, me(), () => viewWorkspace($('#content'), me())),
+    'ot-open': openOtMenu,
+    'ot-outtime': () => { closeModal(); openOT(); },
+    'ot-start': () => { closeModal(); runOp(opOtStart, me(), () => viewWorkspace($('#content'), me())); },
+    'ot-stop': () => runOp(opOtStop, me(), () => viewWorkspace($('#content'), me())),
+    // kiosk
+    'kiosk-open': () => { location.hash = 'kiosk'; },
+    'kiosk-exit': () => { kioskQ = ''; const u = me(); if (u) location.hash = u.role === 'admin' ? 'dashboard' : 'workspace'; else { try { history.replaceState(null, '', location.pathname + location.search); } catch { /* ignore */ } render(); } },
+    'kiosk-pick': (el) => kioskPin(byId(el.dataset.id)),
+    'kiosk-key': (el) => { const i = $('#k-pin'); if (!i) return; if (el.dataset.k === 'del') i.value = i.value.slice(0, -1); else if (i.value.length < 4) i.value += el.dataset.k; kioskDots(); if (i.value.length === 4) i.form.requestSubmit(); },
+    'kiosk-do': (el) => {
+      const u = byId(el.dataset.id);
+      const fn = { in: opClockIn, out: opClockOut, otstart: opOtStart, otstop: opOtStop }[el.dataset.op];
+      try { const msg = fn(u); closeModal(); renderKioskGrid(); kioskDone(u, msg); } catch (e) { toast(e.message, 'err'); }
+    },
+    'payslip-pdf': () => payslipPdf(me()),
+    // employee dashboard
+    'ed-open': (el) => { edEmpId = el.dataset.id; edTab = 'overview'; edPayPage = 1; edOpenFolder = null; if (location.hash === '#employee-dashboard') render(); else location.hash = 'employee-dashboard'; },
+    'ed-tab': (el) => { edTab = el.dataset.k; document.querySelectorAll('.ed-tabs button').forEach((b) => b.classList.toggle('on', b.dataset.k === edTab)); renderEdBody(edEmp()); },
+    'ed-next': () => { const l = edList(); const i = l.findIndex((x) => x.id === edEmp().id); edEmpId = l[(i + 1) % l.length].id; edPayPage = 1; edOpenFolder = null; viewEmployeeDashboard($('#content')); },
+    'ed-info': () => edInfoModal(edEmp()),
+    'ed-page': (el) => { edPayPage = Number(el.dataset.p); renderEdBody(edEmp()); },
+    'ed-slip': (el) => edSlipModal(edEmp(), el.dataset.ym),
+    'ed-folder': (el) => { edOpenFolder = edOpenFolder === el.dataset.f ? null : el.dataset.f; viewEmployeeDashboard($('#content')); },
+    'ed-upload': edUploadModal,
+    // admin
+    'tt-shift': (el) => { const d = addDays(ttDate, Number(el.dataset.n)); if (d <= today()) { ttDate = d; render(); } },
+    'emp-new': () => empForm(null),
+    'emp-edit': (el) => empForm(byId(el.dataset.id)),
+    'emp-del': (el) => {
+      const e = byId(el.dataset.id);
+      openModal({ title: 'Delete employee?', width: 440, body: `<p>This permanently removes <strong>${esc(e.name)}</strong> along with all their attendance and leave history. To keep the history, set the employee to <em>Inactive</em> instead.</p>`,
+        footer: `<button class="btn btn-ghost" data-act="modal-close">Cancel</button><button class="btn btn-danger" data-act="emp-del-yes" data-id="${e.id}">Delete permanently</button>` });
+    },
+    'emp-del-yes': (el) => {
+      const id = el.dataset.id;
+      db.users = db.users.filter((u) => u.id !== id);
+      Object.keys(db.att).forEach((k) => { if (k.startsWith(`${id}|`)) delete db.att[k]; });
+      db.leaves = db.leaves.filter((l) => l.empId !== id);
+      persist(); closeModal(); render(); toast('Employee deleted');
+    },
+    'reg-shift': (el) => { const d = addDays(regDate, Number(el.dataset.n)); if (d <= today()) { regDate = d; render(); } },
+    'reg-status': (el) => { regSet(el.dataset.id, { status: el.dataset.s }); renderRegTable(); },
+    'reg-bulk': (el) => {
+      const s = el.dataset.s; let n = 0;
+      Object.entries(regEdits).forEach(([id, x]) => { if (!x.status) { regSet(id, { status: s, checkIn: s === 'Present' ? SHIFTS[0].start : '' }); n += 1; } });
+      renderRegTable();
+      toast(n ? `${n} employee(s) set to ${s}. Remember to save.` : 'Everyone already has a status');
+    },
+    'reg-save': () => {
+      const ids = [...regDirty].filter((id) => regEdits[id].status);
+      for (const id of ids) {
+        const x = regEdits[id];
+        if (x.checkIn && x.checkOut && toMin(x.checkOut) <= toMin(x.checkIn)) return toast(`${byId(id).name}: check-out must be after check-in`, 'err');
+      }
+      ids.forEach((id) => {
+        const x = regEdits[id]; const noT = x.status === 'Absent' || x.status === 'Leave';
+        const ci = noT ? null : x.checkIn || null; const co = noT ? null : x.checkOut || null;
+        const wm = ci && co ? toMin(co) - toMin(ci) : 0;
+        db.att[`${id}|${regDate}`] = { status: x.status, checkIn: ci, checkOut: co, workMinutes: wm, otMinutes: co ? Math.max(0, toMin(co) - toMin(SHIFTS[1].end)) : 0, remarks: x.remarks || '', source: 'admin' };
+      });
+      persist(); toast(`Attendance saved for ${ids.length} employee(s)`); render();
+    },
+    'leave-tab': (el) => { leaveTabSel = el.dataset.t; render(); },
+    'leave-review': (el) => {
+      const l = db.leaves.find((x) => x.id === el.dataset.id); const s = el.dataset.s; const e = byId(l.empId);
+      openModal({ title: s === 'Approved' ? 'Approve leave' : 'Reject leave', width: 480,
+        body: `<p><strong>${esc(e?.name)}</strong> · ${l.type} leave · ${fmtDate(l.from)} – ${fmtDate(l.to)} (${l.days} day${l.days > 1 ? 's' : ''})</p><p class="muted small">${esc(l.reason)}</p>
+          ${s === 'Approved' ? '<p class="muted small">The attendance register will be marked “Leave” for these working days.</p>' : ''}
+          <label class="field"><span>Comment (optional)</span><textarea id="rv-comment" rows="3" maxlength="300"></textarea></label>`,
+        footer: `<button class="btn btn-ghost" data-act="modal-close">Cancel</button><button class="btn ${s === 'Approved' ? 'btn-success' : 'btn-danger'}" data-act="leave-review-yes" data-id="${l.id}" data-s="${s}">${s === 'Approved' ? 'Approve' : 'Reject'}</button>` });
+    },
+    'leave-review-yes': (el) => {
+      const l = db.leaves.find((x) => x.id === el.dataset.id);
+      l.status = el.dataset.s; l.comment = $('#rv-comment').value.trim(); l.reviewedBy = me().name;
+      if (l.status === 'Approved') {
+        workingDays(l.from, l.to).forEach((d) => {
+          const k = `${l.empId}|${d}`;
+          if (!db.att[k]?.checkIn) db.att[k] = { status: 'Leave', checkIn: null, checkOut: null, workMinutes: 0, remarks: `${l.type} leave`, source: 'leave' };
+        });
+      }
+      persist(); render(); toast(`Leave ${l.status.toLowerCase()}`);
+    },
+    'leave-new': () => {
+      const t = today();
+      openModal({ title: 'Apply for Leave', width: 520,
+        body: `<form data-form="leave"><div class="form-grid">
+          <label class="field span-2"><span>Leave type</span><select name="type">${LEAVE_TYPES.map((x) => `<option>${x}</option>`).join('')}</select></label>
+          <label class="field"><span>From</span><input type="date" name="from" value="${t}" required></label>
+          <label class="field"><span>To</span><input type="date" name="to" value="${t}" required></label>
+          <label class="field span-2"><span>Reason</span><textarea name="reason" rows="3" maxlength="500" required></textarea></label>
+        </div><div class="modal-foot inline"><button type="button" class="btn btn-ghost" data-act="modal-close">Cancel</button><button class="btn btn-primary">Submit request</button></div></form>` });
+    },
+    'leave-cancel': (el) => { const l = db.leaves.find((x) => x.id === el.dataset.id); l.status = 'Cancelled'; persist(); render(); toast('Request cancelled'); },
+    'rp-type': (el) => { rp.type = el.dataset.k; repView = rp.type === 'daily' ? 'details' : 'summary'; viewReports($('#content')); },
+    'rp-run': () => { renderReport(); toast('Report generated'); },
+    'rep-view': (el) => { repView = el.dataset.v; renderReport(); },
+    export: (el) => { if (!report) return toast('Generate a report first', 'err'); (el.dataset.k === 'excel' ? exportExcel : exportPdf)(report); },
+  };
+
+  document.addEventListener('click', (e) => {
+    const el = e.target.closest('[data-act]');
+    if (!el || el.disabled) return;
+    const fn = ACTIONS[el.dataset.act];
+    if (fn) fn(el, e);
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+  document.addEventListener('input', (e) => {
+    const el = e.target;
+    if (el.dataset.empf) { empF[el.dataset.empf] = el.value; renderEmpTable(); }
+    if (el.id === 'reg-q') { regQ = el.value; renderRegTable(); }
+    if (el.id === 'k-q') { kioskQ = el.value; renderKioskGrid(); }
+    if (el.id === 'k-pin') { el.value = el.value.replace(/\D/g, '').slice(0, 4); kioskDots(); if (el.value.length === 4) el.form.requestSubmit(); }
+    if (el.dataset.reg) {
+      regEdits[el.dataset.id][el.dataset.reg] = el.value; regDirty.add(el.dataset.id);
+      $(`#row-${el.dataset.id}`)?.classList.add('row-dirty'); renderRegChips();
+    }
+    if (el.name === 'out' && el.closest('[data-form="ot"]')) updateOtPreview();
+  });
+  document.addEventListener('change', (e) => {
+    const el = e.target;
+    if (el.id === 'reg-date' && el.value && el.value <= today()) { regDate = el.value; render(); }
+    if (el.id === 'tt-date' && el.value && el.value <= today()) { ttDate = el.value; render(); }
+    if (el.id === 'ed-month' && el.value) { edAttMonth = el.value; renderEdBody(edEmp()); }
+    if (el.id === 'ed-search' && el.value) {
+      const hit = edList().find((x) => el.value.includes(x.employeeId) || x.name.toLowerCase() === el.value.toLowerCase());
+      if (hit) { edEmpId = hit.id; edPayPage = 1; viewEmployeeDashboard($('#content')); } else toast('No matching employee', 'err');
+    }
+    if (el.id === 'pay-month') { wsPayMonth = el.value; renderWsTab(me()); }
+    if (el.id === 'sim-time') {
+      if (el.value) {
+        if (!sim) simSnapshot = JSON.stringify(db);
+        sim = { real: Date.now(), sec: toMin(el.value) * 60, label: el.value };
+        toast(`Demo clock set to ${el.value}. Changes are temporary`);
+      } else { endSim(); toast('Back to real time. Demo changes discarded'); }
+      syncToday(); viewWorkspace($('#content'), me());
+    }
+    if (el.dataset.rp) {
+      rp[el.dataset.rp] = el.value;
+      if (el.dataset.rp === 'dept') { rp.emp = ''; viewReports($('#content')); }
+    }
+  });
+
+  const FORMS = {
+    login: (f) => {
+      const email = f.email.value.trim().toLowerCase(); const pw = f.password.value;
+      const u = db.users.find((x) => x.email === email);
+      if (!email || !pw) { $('#login-err').innerHTML = '<div class="alert alert-error">Email and password are required</div>'; return; }
+      if (!u || u.role !== 'admin' || u.password !== pw) { $('#login-err').innerHTML = '<div class="alert alert-error">Invalid email or password</div>'; return; }
+      if (u.status !== 'active') { $('#login-err').innerHTML = '<div class="alert alert-error">Your account is inactive. Contact the administrator.</div>'; return; }
+      db.session = u.id; persist();
+      try { history.replaceState(null, '', `#${u.role === 'admin' ? 'dashboard' : 'workspace'}`); } catch { /* ignore */ }
+      render(); toast(`Welcome back, ${u.name.split(' ')[0]}!`);
+    },
+    employee: (f) => {
+      const id = f.dataset.id; const d = Object.fromEntries(new FormData(f));
+      Object.keys(d).forEach((k) => { d[k] = String(d[k]).trim(); });
+      d.employeeId = d.employeeId.toUpperCase(); d.email = d.email.toLowerCase(); d.salary = Number(d.salary) || 0;
+      if (!d.name || !d.employeeId || !d.email) return toast('Name, Employee ID and Email are required', 'err');
+      if (!/^\S+@\S+\.\S+$/.test(d.email)) return toast('Please enter a valid email', 'err');
+      if (db.users.some((u) => u.id !== id && u.email === d.email)) return toast('A user with this email already exists', 'err');
+      if (db.users.some((u) => u.id !== id && u.employeeId === d.employeeId)) return toast('This Employee ID is already used', 'err');
+      if (!id && d.password.length < 8) return toast('Password must be at least 8 characters', 'err');
+      if (id && d.password && d.password.length < 8) return toast('Password must be at least 8 characters', 'err');
+      if (d.pin && !/^\d{4}$/.test(d.pin)) return toast('Kiosk PIN must be 4 digits', 'err');
+      if (!d.pin) delete d.pin;
+      if (!d.password) delete d.password;
+      if (id) Object.assign(byId(id), d);
+      else db.users.push({ id: uid(), role: 'employee', ...d });
+      persist(); closeModal(); render(); toast(id ? 'Employee updated' : 'Employee added');
+    },
+    leave: (f) => {
+      const u = me(); const d = Object.fromEntries(new FormData(f));
+      if (!d.from || !d.to || d.to < d.from) return toast('End date cannot be before start date', 'err');
+      if (!d.reason.trim()) return toast('Please provide a reason', 'err');
+      const days = workingDays(d.from, d.to).length;
+      if (!days) return toast('Selected range has no working days', 'err');
+      if (db.leaves.some((l) => l.empId === u.id && ['Pending', 'Approved'].includes(l.status) && l.from <= d.to && l.to >= d.from)) return toast('You already have a request overlapping these dates', 'err');
+      db.leaves.push({ id: uid(), empId: u.id, type: d.type, from: d.from, to: d.to, days, reason: d.reason.trim(), status: 'Pending', comment: '', createdAt: Date.now(), reviewedBy: '' });
+      persist(); closeModal(); wsTab = 'leave'; render(); toast('Leave request submitted');
+    },
+    ot: (f) => {
+      const u = me(); const t = today(); const rec = getAtt(u.id, t);
+      const s = rec?.sessions?.find((x) => x.shift === f.dataset.shift);
+      if (!s) return;
+      const out = f.out.value;
+      if (!out) return toast('Please enter an out time', 'err');
+      if (toMin(out) <= toMin(s.in)) return toast(`Out time must be after your clock-in (${s.in})`, 'err');
+      if (toMin(out) > Math.floor(nowMinF())) return toast(`Out time can't be in the future (now ${nowHH()})`, 'err');
+      const nextS = rec.sessions.find((x) => toMin(x.in) > toMin(s.in));
+      if (nextS && toMin(out) > toMin(nextS.in)) return toast(`Out time overlaps your ${nextS.shift} clock-in (${nextS.in})`, 'err');
+      Object.assign(s, { out, manual: true, auto: false, reason: f.reason.value, note: f.note.value.trim() });
+      syncRec(rec, t); persist(); closeModal(); viewWorkspace($('#content'), u);
+      const ot = Math.max(0, toMin(out) - toMin(shiftOf(s.shift).end));
+      toast(ot ? `Out time ${out} saved · +${hm(ot)} overtime` : `Out time ${out} saved`);
+    },
+    'kiosk-pin': (f) => {
+      const u = byId(f.dataset.id); const pin = f.pin.value;
+      if (pin !== (u.pin || '1234')) { $('#k-err').textContent = 'Wrong PIN, please try again'; f.pin.value = ''; kioskDots(); f.pin.focus(); return; }
+      kioskActions(u);
+    },
+    'ed-upload': (f) => {
+      const file = f.file.files[0]; if (!file) return toast('Choose a file', 'err');
+      const e = edEmp(); db.docs = db.docs || {}; db.docs[e.id] = db.docs[e.id] || [];
+      db.docs[e.id].push({ folder: f.folder.value, name: file.name, date: today() });
+      edOpenFolder = f.folder.value; persist(); closeModal(); viewEmployeeDashboard($('#content')); toast(`${file.name} uploaded to ${f.folder.value}`);
+    },
+    password: (f) => {
+      const u = me();
+      if (f.cur.value !== u.password) return toast('Current password is incorrect', 'err');
+      if (f.nw.value.length < 8) return toast('New password must be at least 8 characters', 'err');
+      if (f.nw.value !== f.cf.value) return toast('New passwords do not match', 'err');
+      u.password = f.nw.value; persist(); f.reset(); toast('Password updated successfully');
+    },
+  };
+  document.addEventListener('submit', (e) => {
+    const f = e.target; const fn = FORMS[f.dataset.form];
+    e.preventDefault();
+    if (fn) fn(f);
+  });
+
+  render();
+})();
+
+</script>
+</body>
+</html>
